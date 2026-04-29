@@ -1,0 +1,25 @@
+{
+  "name": "TypeBridge",
+  "logo": {
+    "light": "/logo/light.svg",
+    "dark": "/logo/dark.svg"
+  },
+  "favicon": "/favicon.png",
+  "colors": {
+    "primary": "#6C3BAA",
+    "light": "#8e66c1",
+    "dark": "#562f88"
+  },
+  "topbarLinks": [
+    {
+      "name": "Support",
+      "url": "mailto:support@typebridge.com"
+    }
+  ],
+  "navigation": [
+    {
+      "group": "Getting Started",
+      "pages": ["introduction", "installation"]
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+@import './reset.css';
+@import './tokens.css';
+
+body {
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  color: var(--color-text-900);
+  background-color: var(--color-surface);
+}
+
+h1 { font-size: var(--font-size-2xl); font-weight: 700; }
+h2 { font-size: var(--font-size-xl); font-weight: 600; }
+h3 { font-size: var(--font-size-lg); font-weight: 600; }
+
+.text-sm { font-size: var(--font-size-sm); }
+.text-xs { font-size: var(--font-size-xs); }
+.text-muted { color: var(--color-text-500); }
+
+button {
+  cursor: pointer;
+  border: none;
+  background: none;
+  transition: var(--transition-base);
+}

@@ -1,0 +1,120 @@
+import React, { useState, useRef } from 'react';
+import * as mammoth from 'mammoth';
+import * as pdfjsLib from 'pdfjs-dist';
+import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.mjs?url';
+import styles from './PasteArea.module.css';
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
+
+export default function PasteArea({ onPaste }) {
+  const [text, setText] = useState('');
+  const [isDragging, setIsDragging] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const fileInputRef = useRef(null);
+
+  const handleSubmit = () => {
+    if (text.trim()) onPaste(text);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files[0];
+    if (file) processFile(file);
+  };
+
+  const handleFileSelect = (e) => {
+    const file = e.target.files[0];
+    if (file) processFile(file);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const processFile = async (file) => {
+    setIsLoading(true);
+    try {
+      if (file.name.endsWith('.docx')) {
+        const arrayBuffer = await file.arrayBuffer();
+        const result = await mammoth.extractRawText({ arrayBuffer });
+        setText(result.value);
+      } else if (file.name.endsWith('.pdf')) {
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        let fullText = '';
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const textContent = await page.getTextContent();
+          // Extract text cleanly
+          const pageText = textContent.items.map(item => item.str).join(' ');
+          // Basic heuristic to add newlines where multiple spaces exist
+          const cleanPageText = pageText.replace(/\s{2,}/g, '\n\n');
+          fullText += cleanPageText + '\n\n';
+        }
+        setText(fullText.trim());
+      } else if (file.type.startsWith('text/')) {
+        const content = await file.text();
+        setText(content);
+      } else {
+        alert('Unsupported file type. Please upload DOCX, PDF, or TXT.');
+      }
+    } catch (error) {
+      console.error('Error reading file:', error);
+      alert('Error extracting text from file.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div 
+      className={`${styles.root} ${isDragging ? styles.dragging : ''}`}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
+      <div className={styles.dropZone}>
+        <textarea
+          className={styles.textarea}
+          placeholder="Paste structured document here or drag & drop a PDF/DOCX file"
+          value={text}
+          onChange={e => setText(e.target.value)}
+          disabled={isLoading}
+        />
+        {isLoading && <div className={styles.loadingOverlay}>Extracting text...</div>}
+      </div>
+      
+      <div className={styles.actions}>
+        <input 
+          type="file" 
+          accept=".docx,.pdf,text/plain" 
+          ref={fileInputRef}
+          style={{ display: 'none' }}
+          onChange={handleFileSelect}
+        />
+        <button 
+          className={styles.uploadBtn} 
+          onClick={() => fileInputRef.current?.click()}
+          disabled={isLoading}
+        >
+          Upload File
+        </button>
+        <button 
+          className={styles.button} 
+          onClick={handleSubmit} 
+          disabled={!text.trim() || isLoading}
+        >
+          Parse Document
+        </button>
+      </div>
+    </div>
+  );
+}

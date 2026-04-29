@@ -1,0 +1,132 @@
+.root {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  background: var(--color-surface);
+  transition: var(--transition-base);
+}
+
+.focused {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-md);
+}
+
+.appliedCard {
+  opacity: 0.8;
+  background: var(--color-success-bg);
+}
+
+.skippedCard {
+  opacity: 0.6;
+  background: var(--color-warning-bg);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.titleWrap {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.levelBadge {
+  font-size: var(--font-size-2xs);
+  font-weight: 700;
+  color: var(--color-text-500);
+  background: var(--color-border);
+  padding: var(--space-micro) var(--space-2);
+  border-radius: var(--radius-sm);
+}
+
+.heading {
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  color: var(--color-text-900);
+  margin: 0;
+}
+
+.strikethrough {
+  text-decoration: line-through;
+  color: var(--color-text-500);
+}
+
+.statusBadgeSuccess, .statusBadgeWarning {
+  font-size: var(--font-size-2xs);
+  font-weight: 700;
+  padding: var(--space-micro) var(--space-2);
+  border-radius: var(--radius-sm);
+}
+
+.statusBadgeSuccess {
+  background: var(--color-success);
+  color: var(--color-surface);
+}
+
+.statusBadgeWarning {
+  background: var(--color-warning);
+  color: var(--color-surface);
+}
+
+.bodyWrap {
+  margin-top: var(--space-2);
+}
+
+.text {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-500);
+  white-space: pre-wrap;
+  margin-bottom: var(--space-3);
+}
+
+.actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.applyBtn, .skipBtn, .restoreBtn {
+  flex: 1;
+  padding: var(--space-2);
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  border: none;
+  transition: var(--transition-base);
+}
+
+.applyBtn {
+  background: var(--color-primary);
+  color: var(--color-surface);
+}
+
+.applyBtn:hover {
+  background: var(--color-primary-dark);
+}
+
+.skipBtn {
+  background: var(--color-border);
+  color: var(--color-text-900);
+}
+
+.skipBtn:hover {
+  background: var(--color-border-strong);
+}
+
+.restoreBtn {
+  background: var(--color-border);
+  color: var(--color-text-900);
+}
+
+.restoreBtn:hover {
+  background: var(--color-border-strong);
+}
+
+.timestamp {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-500);
+  margin-top: var(--space-2);
+}

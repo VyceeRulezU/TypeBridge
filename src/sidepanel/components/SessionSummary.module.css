@@ -1,0 +1,85 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  height: 100%;
+  gap: var(--space-4);
+}
+
+.title {
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  color: var(--color-primary);
+  margin: 0;
+}
+
+.reminder {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-500);
+}
+
+.metrics {
+  display: flex;
+  gap: var(--space-6);
+  margin: var(--space-4) 0;
+}
+
+.metric {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.value {
+  font-size: var(--font-size-2xl);
+  font-weight: 700;
+  color: var(--color-text-900);
+}
+
+.label {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-500);
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  width: 100%;
+}
+
+.btnExport, .btnReset {
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  width: 100%;
+  cursor: pointer;
+  border: none;
+  transition: var(--transition-base);
+}
+
+.btnExport {
+  background-color: var(--color-primary);
+  color: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.btnExport:hover {
+  background-color: var(--color-primary-dark);
+}
+
+.btnReset {
+  background-color: transparent;
+  color: var(--color-text-500);
+  border: 1px solid var(--color-border-strong);
+}
+
+.btnReset:hover {
+  background-color: var(--color-tint);
+  color: var(--color-primary);
+}

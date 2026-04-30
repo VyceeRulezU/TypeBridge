@@ -51,7 +51,7 @@ Copywriters and designers waste hours manually moving text from documents into w
 | Testing | Playwright, Vitest |
 
 ## Documentation
-For deep-dives into our architecture and design system, see the [/.product](./.product/README.md) directory.
+For deep-dives into our architecture and design system, see the [docs/product](./docs/product/README.md) directory.
 
 ## Installation
 [Add Chrome Web Store Link Here]
@@ -60,4 +60,4 @@ For deep-dives into our architecture and design system, see the [/.product](./.p
 We welcome contributions. Please read our contributing guidelines in the docs.
 
 ## License
-MIT
+Proprietary. See [LICENSE](./LICENSE) for details.

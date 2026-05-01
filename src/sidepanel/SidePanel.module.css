@@ -35,7 +35,7 @@
   font-weight: 600;
 }
 
-.themeToggle {
+.themeToggle, .resetBtn {
   background: transparent;
   border: none;
   font-size: var(--font-size-lg);
@@ -46,9 +46,10 @@
   align-items: center;
   justify-content: center;
   transition: var(--transition-fast);
+  color: var(--color-surface);
 }
 
-.themeToggle:hover {
+.themeToggle:hover, .resetBtn:hover {
   background: var(--color-primary-dark);
 }
 

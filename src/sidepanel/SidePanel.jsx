@@ -216,6 +216,11 @@ export default function SidePanel() {
           {sections.length > 0 && (
             <div className={styles.count}>{appliedCount} / {sections.length}</div>
           )}
+          {sections.length > 0 && view !== 'complete' && (
+            <button className={styles.resetBtn} onClick={handleReset} title="Start Over" aria-label="Start over">
+              ↺
+            </button>
+          )}
           <button className={styles.themeToggle} onClick={toggleTheme} aria-label="Toggle theme">
             {theme === 'light' ? '🌙' : '☀️'}
           </button>

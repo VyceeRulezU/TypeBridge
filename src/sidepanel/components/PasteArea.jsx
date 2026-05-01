@@ -89,6 +89,9 @@ export default function PasteArea({ onPaste }) {
           onChange={e => setText(e.target.value)}
           disabled={isLoading}
         />
+        {text.trim() && !isLoading && (
+          <button className={styles.clearBtn} onClick={() => setText('')}>Clear</button>
+        )}
         {isLoading && <div className={styles.loadingOverlay}>Extracting text...</div>}
       </div>
       

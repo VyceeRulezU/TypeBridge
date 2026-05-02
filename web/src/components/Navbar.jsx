@@ -25,7 +25,7 @@ const Navbar = () => {
           <ul className={styles.links}>
             <li><a href="#features">Features</a></li>
             <li><a href="#how-it-works">How it Works</a></li>
-            <li><a href="#pricing">Pricing</a></li>
+            {/* <li><a href="#pricing">Pricing</a></li> */}
           </ul>
           <div className={styles.actions}>
             <motion.button 
@@ -57,7 +57,7 @@ const Navbar = () => {
             <ul className={styles.mobileLinks}>
               <li><a href="#features" onClick={() => setIsOpen(false)}>Features</a></li>
               <li><a href="#how-it-works" onClick={() => setIsOpen(false)}>How it Works</a></li>
-              <li><a href="#pricing" onClick={() => setIsOpen(false)}>Pricing</a></li>
+              {/* <li><a href="#pricing" onClick={() => setIsOpen(false)}>Pricing</a></li> */}
             </ul>
             <div className={styles.mobileBottom}>
               <button className="btn btn-primary" style={{ width: '100%' }}>

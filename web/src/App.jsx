@@ -8,7 +8,7 @@ import ValueProp from './components/ValueProp';
 import HowItWorks from './components/HowItWorks';
 import BentoFeatures from './components/BentoFeatures';
 import Testimonials from './components/Testimonials';
-import Pricing from './components/Pricing';
+// import Pricing from './components/Pricing';
 import FAQ from './components/FAQ';
 import CTASection from './components/CTASection';
 import Footer from './components/Footer';
@@ -121,7 +121,7 @@ function App() {
             <HowItWorks />
             <BentoFeatures />
             <Testimonials />
-            <Pricing />
+            {/* <Pricing /> */}
             <FAQ />
             <CTASection />
           </main>

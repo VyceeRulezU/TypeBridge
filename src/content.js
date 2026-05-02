@@ -7,19 +7,86 @@ import { getSelector } from './utils/selectorEngine.js';
 let lastFocusedElement = null;
 let isActive = true;
 
-// Listen on document for focusin (bubbles, unlike focus)
-document.addEventListener('focusin', handleFocus);
+// Listen on document for focusin and click
+// Listen on document for focusin, click, and mousedown
+document.addEventListener('focusin', handleFocus, true);
+document.addEventListener('click', handleFocus, true);
+document.addEventListener('mousedown', (e) => {
+  if (!isActive) return;
+  chrome.runtime.sendMessage({ type: 'HEARTBEAT' });
+  handleFocus(e);
+}, true);
+
+document.addEventListener('selectionchange', () => {
+  if (!isActive) return;
+  const el = getDeepActiveElement();
+  if (el && el !== document.body && (el.isContentEditable || el.tagName === 'INPUT' || el.tagName === 'TEXTAREA')) {
+    handleFocus({ target: el, type: 'selection' });
+  }
+});
+
+function getTargetElement(e) {
+  if (e.composedPath) {
+    const path = e.composedPath();
+    return path[0];
+  }
+  return e.target;
+}
 
 function handleFocus(e) {
   if (!isActive) return;
   
-  const el = e.target;
+  let el = getTargetElement(e);
+  if (!el) return;
+
+  // Search for the first editable element in the hierarchy if we didn't land on one
+  let target = el;
+  while (target && target !== document.body) {
+    if (target.isContentEditable || target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+      el = target;
+      break;
+    }
+    target = target.parentElement;
+  }
+
+  // If still not editable, use elementsFromPoint on click
+  if (e.type === 'click' && !(el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable)) {
+    const elementsAtPoint = document.elementsFromPoint(e.clientX, e.clientY);
+    for (const cand of elementsAtPoint) {
+      if (cand.tagName === 'INPUT' || cand.tagName === 'TEXTAREA' || cand.isContentEditable) {
+        el = cand;
+        break;
+      }
+      if (['H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'P', 'SPAN'].includes(cand.tagName)) {
+        el = cand;
+        break;
+      }
+    }
+  }
+  
   const isEditable =
     el.tagName === 'INPUT' ||
     el.tagName === 'TEXTAREA' ||
     el.isContentEditable;
     
+  if (!isEditable && (e.type === 'click' || e.type === 'mousedown')) {
+    if (el.tagName === 'BODY' || el.tagName === 'HTML' || el.tagName === 'DIV' && el.children.length > 5) return;
+    lastFocusedElement = el;
+    
+    chrome.runtime.sendMessage({
+      type: 'FOCUS_DETECTED',
+      payload: { 
+        tagName: el.tagName.toLowerCase(), 
+        isContentEditable: false,
+        previewText: getPreviewText(el),
+        selector: getSelector(el)
+      }
+    });
+    return;
+  }
+
   if (!isEditable) return;
+  if (lastFocusedElement === el && (e.type === 'poll' || e.type === 'selection')) return; 
   
   lastFocusedElement = el;
 
@@ -36,14 +103,32 @@ function handleFocus(e) {
   });
 }
 
+function getDeepActiveElement() {
+  let el = document.activeElement;
+  while (el && el.shadowRoot && el.shadowRoot.activeElement) {
+    el = el.shadowRoot.activeElement;
+  }
+  return el;
+}
+
+// Polling for focus (fallback for builders that intercept all events)
+setInterval(() => {
+  if (!isActive) return;
+  const el = getDeepActiveElement();
+  if (el && el !== document.body && el !== lastFocusedElement && (el.isContentEditable || el.tagName === 'INPUT' || el.tagName === 'TEXTAREA')) {
+    handleFocus({ target: el, type: 'poll' });
+  }
+}, 500);
+
 function getPreviewText(el) {
+  if (!el) return '';
   let text = '';
   if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
     text = el.value || '';
-  } else if (el.isContentEditable) {
-    text = el.innerText || '';
+  } else {
+    text = el.innerText || el.textContent || '';
   }
-  return text.substring(0, 80);
+  return text.trim().substring(0, 150); // Increased limit for better matching
 }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -56,12 +141,19 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 });
 
+// Listen for broadcasted events from background script (handles all frames)
+window.addEventListener('TYPEBRIDGE_APPLY_BROADCAST', (e) => {
+  handleApply(e.detail);
+});
+
 function handleApply(payload) {
+  // Fallback to activeElement if lastFocusedElement isn't set
+  const deepActive = getDeepActiveElement();
+  if (!lastFocusedElement && deepActive && deepActive !== document.body) {
+    lastFocusedElement = deepActive;
+  }
+
   if (!lastFocusedElement) {
-    chrome.runtime.sendMessage({
-      type: 'APPLY_ERROR',
-      payload: { sectionId: payload.sectionId, reason: 'NO_ACTIVE_ELEMENT' }
-    });
     return;
   }
 
@@ -90,6 +182,11 @@ function handleApply(payload) {
       element.innerText = newText;
       element.dispatchEvent(new Event('input', { bubbles: true }));
       element.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: newText }));
+    } else {
+      // Fallback for elements tracked via click that might not be strictly editable yet
+      element.innerText = newText;
+      element.dispatchEvent(new Event('input', { bubbles: true }));
+      element.dispatchEvent(new Event('change', { bubbles: true }));
     }
 
     chrome.runtime.sendMessage({

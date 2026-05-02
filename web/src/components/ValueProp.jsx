@@ -1,25 +1,39 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { FiZap, FiLayout, FiCpu, FiFastForward } from 'react-icons/fi';
-import styles from '../styles/ValueProp.module.css';
+import styles from './ValueProp.module.css';
+
+const words = [
+  { text: 'We help design teams', muted: true },
+  { text: 'speed up', accent: '#6C3BAA' },
+  { text: 'deployment,', muted: true },
+  { text: 'automate', accent: '#3b82f6' },
+  { text: 'copy workflows, and', muted: true },
+  { text: 'detect', accent: '#10b981' },
+  { text: 'active fields instantly — so they can', muted: true },
+  { text: 'ship faster.', accent: '#6C3BAA', bold: true },
+];
 
 const ValueProp = () => {
   return (
-    <section className={styles.section} id="features">
+    <section className={`${styles.section} features-section`} id="features">
       <div className="container">
-        <div className={styles.content}>
-          <motion.p 
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
+        <div className={`${styles.innerContainer} valueprop-feature-container`}>
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 1 }}
+            transition={{ duration: 0.7 }}
             className={styles.largeText}
           >
-            We help design teams 
-            <span className={styles.highlightBlue}> <FiZap /> speed up </span> deployment, 
-            <span className={styles.highlightOrange}> <FiLayout /> automate </span> copy workflows, 
-            and <span className={styles.highlightCyan}> <FiCpu /> detect </span> active fields instantly so they can 
-            <span className={styles.highlightPink}> <FiFastForward /> ship sites </span> without the manual copy-paste grind.
+            {words.map((w, i) => (
+              <span
+                key={i}
+                className={w.muted ? styles.muted : styles.highlight}
+                style={w.accent ? { color: w.accent, fontWeight: w.bold ? 800 : 700 } : {}}
+              >
+                {w.text}{' '}
+              </span>
+            ))}
           </motion.p>
         </div>
       </div>

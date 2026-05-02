@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import styles from '../styles/Navbar.module.css';
-import logo from '../assets/logo.png';
+import styles from './Navbar.module.css';
+import logo from '../assets/typebridge-purple-text-logo.png';
 
 const Navbar = () => {
   return (
@@ -9,12 +9,14 @@ const Navbar = () => {
       initial={{ y: -100 }}
       animate={{ y: 0 }}
       transition={{ duration: 0.5 }}
-      className={styles.navbar}
+      className={`${styles.navbar} nav-section`}
+      id="navbar"
     >
       <div className={`container ${styles.content}`}>
         <div className={styles.logo}>
-          <img src={logo} alt="TypeBridge Logo" className={styles.logoImg} />
-          <span className={styles.text}>TypeBridge</span>
+          <a href="/">
+            <img src={logo} alt="TypeBridge" className={styles.logoImg} />
+          </a>
         </div>
         <ul className={styles.links}>
           <li><a href="#features">Features</a></li>
@@ -22,9 +24,9 @@ const Navbar = () => {
           <li><a href="#pricing">Pricing</a></li>
         </ul>
         <motion.button 
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          className={styles.cta}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          className="btn btn-primary"
         >
           Download Extension
         </motion.button>

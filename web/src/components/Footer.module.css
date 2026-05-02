@@ -1,0 +1,134 @@
+.footer {
+  background: #0f0a1e;
+  color: rgba(255,255,255,0.75);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Shared 1440px-capped inner wrapper */
+.inner {
+  max-width: 1440px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 0 1.5rem;
+}
+
+.top {
+  flex: 1;
+  min-height: 60vh;
+  display: flex;
+  align-items: center;
+  padding: 5rem 0 4rem;
+}
+
+.top .inner {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 4rem;
+}
+
+/* Brand column */
+.brand {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  max-width: 320px;
+}
+
+.logo {
+  height: 6rem;
+  width: auto;
+  display: block;
+  object-fit: contain;
+}
+
+.tagline {
+  font-size: 0.9375rem;
+  color: rgba(255,255,255,0.4);
+  line-height: 1.75;
+}
+
+.socials {
+  display: flex;
+  gap: 0.625rem;
+}
+
+.socials a {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9375rem;
+  color: rgba(255,255,255,0.45);
+  transition: all 180ms ease;
+}
+
+.socials a:hover {
+  border-color: rgba(142, 102, 193, 0.6);
+  color: white;
+  background: rgba(108, 59, 170, 0.2);
+}
+
+/* Link columns */
+.links {
+  display: flex;
+  gap: 4rem;
+}
+
+.linkGroup h4 {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.35);
+  margin-bottom: 1.25rem;
+}
+
+.linkGroup ul {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.linkGroup a {
+  font-size: 0.9375rem;
+  color: rgba(255,255,255,0.55);
+  transition: color 150ms ease;
+}
+
+.linkGroup a:hover {
+  color: white;
+}
+
+/* Bottom bar */
+.bottom {
+  border-top: 1px solid rgba(255,255,255,0.06);
+  padding: 1.5rem 0;
+}
+
+.bottom .inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8125rem;
+  color: rgba(255,255,255,0.25);
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .top .inner {
+    flex-direction: column;
+    gap: 3rem;
+  }
+  .brand { max-width: 100%; }
+}
+
+@media (max-width: 600px) {
+  .links { gap: 2rem; flex-wrap: wrap; }
+  .top { min-height: unset; }
+  .bottom .inner { flex-direction: column; gap: 0.5rem; text-align: center; }
+}

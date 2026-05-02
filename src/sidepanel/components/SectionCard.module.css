@@ -54,16 +54,20 @@
   color: var(--color-text-500);
 }
 
-.statusBadgeSuccess, .statusBadgeWarning {
-  font-size: var(--font-size-2xs);
-  font-weight: 700;
-  padding: var(--space-micro) var(--space-2);
-  border-radius: var(--radius-sm);
-}
-
-.statusBadgeSuccess {
+.successIconWrap {
   background: var(--color-success);
   color: var(--color-surface);
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.checkIcon {
+  font-size: 14px;
 }
 
 .statusBadgeWarning {
@@ -129,4 +133,96 @@
   font-size: var(--font-size-xs);
   color: var(--color-text-500);
   margin-top: var(--space-2);
+}
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.editIconBtn {
+  background: transparent;
+  border: none;
+  color: var(--color-text-400);
+  cursor: pointer;
+  padding: var(--space-1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  transition: var(--transition-fast);
+}
+
+.editIconBtn:hover {
+  color: var(--color-primary);
+  background: var(--color-tint);
+}
+
+.editing {
+  border-color: var(--color-primary-light);
+  box-shadow: var(--shadow-sm);
+}
+
+.editMode {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.editArea {
+  width: 100%;
+  padding: var(--space-2);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: var(--font-size-sm);
+  resize: vertical;
+  background: var(--color-surface);
+  color: var(--color-text-900);
+}
+
+.editActions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.saveBtn, .cancelBtn {
+  flex: 1;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+}
+
+.saveBtn {
+  background: var(--color-success);
+  color: white;
+}
+
+.cancelBtn {
+  background: var(--color-border);
+  color: var(--color-text-500);
+}
+.reapplyBtn {
+  background: var(--color-primary-light);
+  color: white;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: var(--transition-fast);
+}
+
+.reapplyBtn:hover {
+  background: var(--color-primary);
+}
+
+.appliedContent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
 }

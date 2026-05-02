@@ -1,6 +1,14 @@
 @import './reset.css';
 @import './tokens.css';
 
+* {
+  caret-color: transparent;
+}
+
+input, textarea, [contenteditable] {
+  caret-color: auto;
+}
+
 body {
   font-family: var(--font-family);
   font-size: var(--font-size-base);

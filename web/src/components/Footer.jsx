@@ -1,42 +1,68 @@
 import React from 'react';
-import styles from '../styles/Footer.module.css';
-import logo from '../assets/logo.png';
+import logo from '../assets/typebridge-all-white-logo.png';
+import styles from './Footer.module.css';
+import { FiTwitter, FiGithub, FiLinkedin } from 'react-icons/fi';
 
 const Footer = () => {
   return (
-    <footer className={styles.footer}>
-      <div className="container">
-        <div className={styles.content}>
+    <footer className={`${styles.footer} footer-section`} id="footer">
+
+      <div className={styles.top}>
+        <div className={styles.inner}>
           <div className={styles.brand}>
-            <div className={styles.logo}>
-              <img src={logo} alt="TypeBridge Logo" className={styles.logoImg} />
-              <span className={styles.text}>TypeBridge</span>
+            <a href="/">
+              <img src={logo} alt="TypeBridge" className={styles.logo} />
+            </a>
+            <p className={styles.tagline}>
+              The extension that bridges the gap between content strategy and web building. Built for designers who ship fast.
+            </p>
+            <div className={styles.socials}>
+              <a href="#" aria-label="Twitter"><FiTwitter /></a>
+              <a href="#" aria-label="GitHub"><FiGithub /></a>
+              <a href="#" aria-label="LinkedIn"><FiLinkedin /></a>
             </div>
-            <p className={styles.tagline}>The extension that bridges the gap between content strategy and web building.</p>
           </div>
+
           <div className={styles.links}>
-            <div className={styles.group}>
+            <div className={styles.linkGroup}>
               <h4>Product</h4>
               <ul>
                 <li><a href="#features">Features</a></li>
-                <li><a href="#how-it-works">How it Works</a></li>
-                <li><a href="#platforms">Supported Builders</a></li>
+                <li><a href="#how-it-works">How It Works</a></li>
+                <li><a href="#partners">Supported Builders</a></li>
+                <li><a href="#faq">FAQ</a></li>
               </ul>
             </div>
-            <div className={styles.group}>
+
+            <div className={styles.linkGroup}>
+              <h4>Company</h4>
+              <ul>
+                <li><a href="/about">About</a></li>
+                <li><a href="/blog">Blog</a></li>
+                <li><a href="/changelog">Changelog</a></li>
+                <li><a href="/contact">Contact</a></li>
+              </ul>
+            </div>
+
+            <div className={styles.linkGroup}>
               <h4>Legal</h4>
               <ul>
-                <li><a href="#">Privacy Policy</a></li>
-                <li><a href="#">Terms of Service</a></li>
-                <li><a href="#">License</a></li>
+                <li><a href="/privacy">Privacy Policy</a></li>
+                <li><a href="/terms">Terms of Service</a></li>
+                <li><a href="/license">License</a></li>
               </ul>
             </div>
           </div>
         </div>
-        <div className={styles.bottom}>
-          <p>&copy; 2026 TypeBridge. Proprietary Software. All rights reserved.</p>
+      </div>
+
+      <div className={styles.bottom}>
+        <div className={styles.inner}>
+          <span>© 2026 TypeBridge. All rights reserved.</span>
+          <span>Built for designers who ship.</span>
         </div>
       </div>
+
     </footer>
   );
 };

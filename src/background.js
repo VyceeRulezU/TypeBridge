@@ -14,10 +14,34 @@ async function ensureContentScript(tabId) {
   } catch {
     // not injected yet — inject now
     await chrome.scripting.executeScript({
-      target: { tabId },
-      files: ['src/content.js'] // vite-plugin-web-extension handles path resolution in dev/build
+      target: { tabId, allFrames: true },
+      files: ['src/content.js']
     });
   }
+}
+
+const pendingApplies = new Set();
+let sidePanelPort = null;
+
+chrome.runtime.onConnect.addListener((port) => {
+  if (port.name === 'sidepanel') {
+    sidePanelPort = port;
+    port.onDisconnect.addListener(() => {
+      sidePanelPort = null;
+    });
+  }
+});
+
+function forwardToPanel(message) {
+  if (sidePanelPort) {
+    try {
+      sidePanelPort.postMessage(message);
+      return;
+    } catch (e) {
+      sidePanelPort = null;
+    }
+  }
+  chrome.runtime.sendMessage(message).catch(() => {});
 }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -28,21 +52,43 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
         if (tab) {
           if (tab.url.startsWith('chrome://') || tab.url.startsWith('chrome-extension://') || tab.url.startsWith('https://chrome.google.com/webstore')) {
-            chrome.runtime.sendMessage({
+            forwardToPanel({
               type: 'APPLY_ERROR',
               payload: { sectionId: message.payload.sectionId, reason: 'Cannot inject copy here. Chrome restricts extensions on this specific page. Try on a real website or page builder.' }
-            }).catch(() => {});
+            });
             return;
           }
           await ensureContentScript(tab.id);
-          chrome.tabs.sendMessage(tab.id, message);
+          
+          const sectionId = message.payload.sectionId;
+          pendingApplies.add(sectionId);
+
+          // Broadcast to ALL frames using executeScript
+          chrome.scripting.executeScript({
+            target: { tabId: tab.id, allFrames: true },
+            func: (payload) => {
+              window.dispatchEvent(new CustomEvent('TYPEBRIDGE_APPLY_BROADCAST', { detail: payload }));
+            },
+            args: [message.payload]
+          });
+
+          // Timeout if no success reported
+          setTimeout(() => {
+            if (pendingApplies.has(sectionId)) {
+              pendingApplies.delete(sectionId);
+              forwardToPanel({
+                type: 'APPLY_ERROR',
+                payload: { sectionId, reason: 'No active element found. Click a text field in Webflow first.' }
+              });
+            }
+          }, 1000);
         }
       } catch (e) {
-        console.error('Failed to inject/send APPLY_COPY', e);
-        chrome.runtime.sendMessage({
+        console.error('Failed to broadcast APPLY_COPY', e);
+        forwardToPanel({
           type: 'APPLY_ERROR',
-          payload: { sectionId: message.payload.sectionId, reason: 'Cannot inject copy here. Chrome restricts extensions on this specific page. Try on a real website or page builder.' }
-        }).catch(() => {});
+          payload: { sectionId: message.payload.sectionId, reason: 'Failed to reach page elements. Try refreshing.' }
+        });
       }
     })();
     return true; // async
@@ -71,17 +117,20 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   // From content -> panel (and storage updates)
   if (message.type === 'FOCUS_DETECTED') {
-    // Forward to side panel
-    chrome.runtime.sendMessage(message).catch(() => {});
+    forwardToPanel(message);
     return false;
   }
 
   if (message.type === 'APPLY_SUCCESS') {
+    // Clear pending timeout
+    pendingApplies.delete(message.payload.sectionId);
+
     (async () => {
       try {
         const { sessionData } = await chrome.storage.session.get('sessionData');
         if (sessionData && sessionData.sections) {
-          const section = sessionData.sections.find(s => s.id === message.payload.sectionId);
+          const sectionId = message.payload.sectionId;
+          const section = sessionData.sections.find(s => s.id === sectionId);
           if (section) {
             // Update stats
             if (section.status !== 'applied') {
@@ -97,10 +146,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             await chrome.storage.session.set({ sessionData });
             
             // Forward updated section back to panel
-            chrome.runtime.sendMessage({
+            forwardToPanel({
               type: 'APPLY_SUCCESS',
               payload: { section }
-            }).catch(() => {});
+            });
           }
         }
       } catch (err) {
@@ -110,8 +159,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
+  if (message.type === 'HEARTBEAT') {
+    forwardToPanel({ type: 'FOCUS_DETECTED', payload: { previewText: null } });
+    return false;
+  }
+
   if (message.type === 'APPLY_ERROR') {
-    chrome.runtime.sendMessage(message).catch(() => {});
+    forwardToPanel(message);
     return false;
   }
 });

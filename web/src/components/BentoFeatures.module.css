@@ -1,0 +1,173 @@
+.section {
+  padding: 6rem 0;
+  background: #0f0a1e;
+}
+
+.faviconImg {
+  width: 100px;
+  height: 100px;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 24px rgba(108, 59, 170, 0.6));
+}
+
+/* ── Header ─────────────────────────────────────────────── */
+.header {
+  text-align: center;
+  margin-bottom: 3.5rem;
+}
+
+.title {
+  font-size: clamp(2.25rem, 4.5vw, 3.5rem);
+  font-weight: 800;
+  color: #ffffff;
+  margin-bottom: 1rem;
+  line-height: 1.1;
+}
+
+.subtitle {
+  font-size: 1.0625rem;
+  color: rgba(255,255,255,0.45);
+  max-width: 520px;
+  margin: 0 auto;
+  line-height: 1.7;
+}
+
+/* ── Bento Grid ──────────────────────────────────────────── */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: 220px 220px 220px;
+  gap: 1rem;
+}
+
+/* ── Base card ───────────────────────────────────────────── */
+.card {
+  background: #1a0f2e;
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 1.25rem;
+  padding: 2rem;
+  position: relative;
+  overflow: hidden;
+  transition: background 220ms ease, border-color 220ms ease, transform 220ms ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.card:hover {
+  background: #22103a;
+  border-color: rgba(142, 102, 193, 0.3);
+  transform: translateY(-3px);
+}
+
+/* ── Card variants ───────────────────────────────────────── */
+
+/* Icon-only card (1×1) — icon fills center */
+.iconCard {
+  grid-column: span 1;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Wide card (2×1) — text left, big icon right */
+.wideCard {
+  grid-column: span 2;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+}
+
+/* Tall card (1×2) — text anchored to bottom */
+.tallCard {
+  grid-column: span 1;
+  grid-row: span 2;
+  justify-content: flex-end;
+}
+
+/* Regular text card (1×1) */
+.textCard {
+  grid-column: span 1;
+  justify-content: flex-end;
+}
+
+/* ── Icon sizes ───────────────────────────────────────────── */
+
+/* Big centered icon (used in iconCard) */
+.bigIcon {
+  font-size: 90px;
+  color: rgba(255,255,255,0.75);
+  filter: drop-shadow(0 8px 24px rgba(108, 59, 170, 0.5));
+  flex-shrink: 0;
+}
+
+/* Floating icon on the right of wideCard */
+.floatIcon {
+  font-size: 110px;
+  color: rgba(255,255,255,0.65);
+  filter: drop-shadow(0 10px 30px rgba(108, 59, 170, 0.55));
+  flex-shrink: 0;
+  margin-right: -0.5rem;
+}
+
+/* Small icon anchored bottom-right of textCard */
+.cornerIcon {
+  position: absolute;
+  bottom: 1.5rem;
+  right: 1.75rem;
+  font-size: 64px;
+  color: rgba(255,255,255,0.12);
+}
+
+/* ── Text blocks ─────────────────────────────────────────── */
+.textBlock {
+  flex: 1;
+}
+
+.tallText {
+  /* text sits at bottom — parent flex-end handles it */
+}
+
+.card h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1.25;
+  margin-bottom: 0.625rem;
+}
+
+.card p {
+  font-size: 0.875rem;
+  color: rgba(255,255,255,0.45);
+  line-height: 1.65;
+}
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media (max-width: 1024px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: auto;
+  }
+  .wideCard, .tallCard {
+    grid-column: span 2;
+    grid-row: span 1;
+  }
+  .tallCard {
+    min-height: 220px;
+  }
+}
+
+@media (max-width: 640px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+  .wideCard, .tallCard, .iconCard, .textCard {
+    grid-column: span 1;
+    grid-row: span 1;
+  }
+  .wideCard {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .floatIcon { font-size: 70px; }
+  .bigIcon { font-size: 60px; }
+}

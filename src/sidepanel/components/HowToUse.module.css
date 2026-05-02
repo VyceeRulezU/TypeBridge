@@ -1,0 +1,59 @@
+.root {
+  background: var(--color-tint);
+  border: 1px solid var(--color-primary-light);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  margin-bottom: var(--space-4);
+  box-shadow: var(--shadow-sm);
+  width: 100%;
+}
+
+.title {
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  margin-bottom: var(--space-2);
+  color: var(--color-text-900);
+  margin-top: 0;
+}
+
+.stepsList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.stepItem {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+}
+
+.iconWrap {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--color-success);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 10px;
+  margin-top: 2px;
+}
+
+.stepContent {
+  display: flex;
+  flex-direction: column;
+}
+
+.stepTitle {
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  color: var(--color-text-900);
+}
+
+.stepDesc {
+  font-size: 10px;
+  color: var(--color-text-500);
+}

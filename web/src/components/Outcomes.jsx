@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { FiFileText, FiTarget, FiMousePointer, FiArrowRight } from 'react-icons/fi';
-import styles from '../styles/Outcomes.module.css';
+import styles from './Outcomes.module.css';
 
 const steps = [
   { 
@@ -29,7 +29,7 @@ const steps = [
 
 const HowItWorks = () => {
   return (
-    <section className={styles.section} id="how-it-works">
+    <section className={`${styles.section} outcomes-section`} id="how-it-works">
       <div className="container">
         <motion.h2 
           initial={{ opacity: 0, x: -20 }}

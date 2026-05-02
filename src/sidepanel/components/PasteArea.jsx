@@ -6,8 +6,12 @@ import styles from './PasteArea.module.css';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 
-export default function PasteArea({ onPaste }) {
-  const [text, setText] = useState('');
+export default function PasteArea({ onPaste, initialText = '' }) {
+  const [text, setText] = React.useState(initialText);
+  
+  React.useEffect(() => {
+    if (initialText) setText(initialText);
+  }, [initialText]);
   const [isDragging, setIsDragging] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const fileInputRef = useRef(null);
@@ -81,6 +85,7 @@ export default function PasteArea({ onPaste }) {
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
+
       <div className={styles.dropZone}>
         <textarea
           className={styles.textarea}

@@ -4,6 +4,11 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   plugins: [react()],
   root: './',
+  css: {
+    modules: {
+      generateScopedName: '[name]__[local]___[hash:base64:5]',
+    },
+  },
   build: {
     outDir: 'dist',
   }

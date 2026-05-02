@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { FiArrowRight, FiDownload } from 'react-icons/fi';
+import footerBg from '../assets/footer-image.png';
 import styles from './CTASection.module.css';
 
 const CTASection = () => {
@@ -13,6 +14,7 @@ const CTASection = () => {
           viewport={{ once: true }}
           className={styles.card}
         >
+          <div className={styles.overlay} style={{ backgroundImage: `url(${footerBg})` }} aria-hidden="true" />
           <div className={styles.glow} />
           <span className={styles.eyebrow}>Get Started — It's Free</span>
           <h2 className={styles.title}>Stop copy-pasting.<br />Start shipping.</h2>

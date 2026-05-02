@@ -203,8 +203,9 @@
 }
 
 @media (max-width: 640px) {
+  .hero { min-height: 100vh; }
   .headline { font-size: clamp(2.5rem, 10vw, 3.5rem); }
   .content { padding-bottom: 3rem; }
-  /* Collapse panels for mobile perf */
-  .panelD, .panelE, .panelF { display: none; }
+  .panel { min-width: 120px; }
+  .descColRight, .rating { display: none; }
 }

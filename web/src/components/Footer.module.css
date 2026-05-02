@@ -3,6 +3,19 @@
   color: rgba(255,255,255,0.75);
   display: flex;
   flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  opacity: 0.05;
+  pointer-events: none;
+  z-index: 0;
 }
 
 /* Shared 1440px-capped inner wrapper */
@@ -15,10 +28,12 @@
 
 .top {
   flex: 1;
-  min-height: 60vh;
+  min-height: 70vh;
   display: flex;
   align-items: center;
   padding: 5rem 0 4rem;
+  position: relative;
+  z-index: 1;
 }
 
 .top .inner {
@@ -108,6 +123,8 @@
 .bottom {
   border-top: 1px solid rgba(255,255,255,0.06);
   padding: 1.5rem 0;
+  position: relative;
+  z-index: 1;
 }
 
 .bottom .inner {

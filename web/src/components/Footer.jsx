@@ -1,12 +1,13 @@
 import React from 'react';
 import logo from '../assets/typebridge-all-white-logo.png';
+import footerBg from '../assets/footer-image.png';
 import styles from './Footer.module.css';
 import { FiTwitter, FiGithub, FiLinkedin } from 'react-icons/fi';
 
 const Footer = () => {
   return (
     <footer className={`${styles.footer} footer-section`} id="footer">
-
+      <div className={styles.overlay} style={{ backgroundImage: `url(${footerBg})` }} aria-hidden="true" />
       <div className={styles.top}>
         <div className={styles.inner}>
           <div className={styles.brand}>

@@ -1,26 +1,21 @@
-COPYRIGHT (C) 2026 TYPEBRIDGE. ALL RIGHTS RESERVED.
+MIT License
 
-PROPRIETARY LICENSE
+Copyright (c) 2026 NaliTech Consults
 
-This software and all accompanying documentation (the "Software") are the exclusive property of TypeBridge. 
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-1. RESTRICTIONS
-You are strictly prohibited from:
-   - Copying, modifying, or distributing the Software.
-   - Using the Software for any purpose other than those explicitly authorized by TypeBridge.
-   - Sublicensing, renting, or leasing the Software.
-   - Reverse engineering, decompiling, or disassembling the Software.
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
 
-2. OWNERSHIP
-TypeBridge retains all rights, title, and interest in and to the Software, including all intellectual property rights therein.
-
-3. TERMINATION
-This license is effective until terminated. Your rights under this license will terminate automatically without notice if you fail to comply with any of its terms.
-
-4. NO WARRANTY
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED.
-
-5. LIMITATION OF LIABILITY
-IN NO EVENT SHALL TYPEBRIDGE BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY ARISING FROM, OUT OF, OR IN CONNECTION WITH THE SOFTWARE.
-
-UNAUTHORIZED USE, REPRODUCTION, OR DISTRIBUTION IS STRICTLY PROHIBITED AND MAY RESULT IN SEVERE CIVIL AND CRIMINAL PENALTIES.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

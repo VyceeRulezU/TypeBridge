@@ -20,7 +20,7 @@ Copywriters and designers waste hours manually moving text from documents into w
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/your-repo/typebridge.git
+   git clone https://github.com/VyceeRulezU/TypeBridge.git
    ```
 2. Install dependencies:
    ```bash
@@ -54,10 +54,13 @@ Copywriters and designers waste hours manually moving text from documents into w
 For deep-dives into our architecture and design system, see the [docs/product](./docs/product/README.md) directory.
 
 ## Installation
-[Add Chrome Web Store Link Here]
+[Download on Chrome Web Store](https://typebridge.vercel.app)
 
 ## Contributing
 We welcome contributions. Please read our contributing guidelines in the docs.
 
 ## License
-Proprietary. See [LICENSE](./LICENSE) for details.
+MIT License. See [LICENSE](./LICENSE) for details.
+
+## Contact
+Questions? Feedback? Reach out at [typebridgeapp@gmail.com](mailto:typebridgeapp@gmail.com)

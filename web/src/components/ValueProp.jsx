@@ -29,7 +29,7 @@ const ValueProp = () => {
               <span
                 key={i}
                 className={w.muted ? styles.muted : styles.highlight}
-                style={w.accent ? { color: w.accent, fontWeight: w.bold ? 800 : 700 } : {}}
+                style={w.accent ? { color: w.accent, fontWeight: w.bold ? 200 : 200 } : {}}
               >
                 {w.text}{' '}
               </span>

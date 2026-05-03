@@ -18,7 +18,7 @@
 
 .title {
   font-size: clamp(2.5rem, 5vw, 4rem);
-  font-weight: 800;
+  font-weight: 200;
   color: var(--color-text-900);
   line-height: 1.1;
   margin-bottom: 1.25rem;
@@ -52,7 +52,7 @@
 
 .missionText h2 {
   font-size: 2rem;
-  font-weight: 800;
+  font-weight: 200;
   color: var(--color-text-900);
 }
 
@@ -72,7 +72,7 @@
 .stat span {
   display: block;
   font-size: 3rem;
-  font-weight: 800;
+  font-weight: 200;
   color: var(--color-primary);
   line-height: 1;
 }
@@ -91,7 +91,7 @@
 
 .valuesTitle {
   font-size: 2rem;
-  font-weight: 800;
+  font-weight: 200;
   color: var(--color-text-900);
   margin-bottom: 2.5rem;
   text-align: center;

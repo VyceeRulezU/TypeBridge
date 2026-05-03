@@ -4,7 +4,7 @@
   text-transform: uppercase; color: var(--color-primary); background: rgba(108,59,170,0.1);
   padding: 0.35rem 1rem; border-radius: 999px; margin-bottom: 1.25rem;
 }
-.title { font-size: clamp(2.5rem, 5vw, 4rem); font-weight: 800; color: var(--color-text-900); line-height: 1.1; margin-bottom: 0.75rem; }
+.title { font-size: clamp(2.5rem, 5vw, 4rem); font-weight: 200; color: var(--color-text-900); line-height: 1.1; margin-bottom: 0.75rem; }
 .subtitle { font-size: 1.0625rem; color: var(--color-text-500); max-width: 520px; line-height: 1.7; }
 
 .body { padding: 4rem 0 6rem; background: white; }
@@ -112,4 +112,26 @@
   .layout { flex-direction: column; gap: 2.5rem; }
   .info { flex: unset; }
   .row { flex-direction: column; }
+}
+
+/* Modal Styles */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+.modalContent {
+  background: white;
+  border-radius: 1.5rem;
+  padding: 2.5rem;
+  max-width: 400px;
+  width: 100%;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.1);
 }

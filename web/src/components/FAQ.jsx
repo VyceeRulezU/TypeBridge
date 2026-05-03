@@ -49,7 +49,7 @@ const FAQ = () => {
             <div className={styles.contactCard}>
               <h3>Still have a question?</h3>
               <p>Can't find the answer you're looking for? Send us an email and we'll get back to you as soon as possible!</p>
-              <a href="mailto:support@typebridge.io" className={styles.contactBtn}>Send email</a>
+              <a href="mailto:typebridgeapp@gmail.com" className={styles.contactBtn}>Send email</a>
             </div>
           </div>
 

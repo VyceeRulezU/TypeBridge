@@ -23,7 +23,7 @@
 
 .title {
   font-size: clamp(2.5rem, 5vw, 3.5rem);
-  font-weight: 800;
+  font-weight: 200;
   color: #1a1625;
   margin-bottom: 0.75rem;
   letter-spacing: -0.02em;

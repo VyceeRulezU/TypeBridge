@@ -55,8 +55,20 @@ function App() {
             e.preventDefault();
             window.history.pushState({}, '', url.pathname + url.hash);
             setPath(newPath);
-            // Scroll to top smoothly when route changes
-            setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 50);
+            
+            // If there's a hash, scroll to it after the home page has rendered
+            if (url.hash) {
+              setTimeout(() => {
+                const target = document.querySelector(url.hash);
+                if (target) {
+                  const y = target.getBoundingClientRect().top + window.scrollY - 80;
+                  window.scrollTo({ top: y, behavior: 'smooth' });
+                }
+              }, 400); // Give it enough time to render components
+            } else {
+              // Scroll to top smoothly when route changes
+              setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 50);
+            }
           } else if (url.hash) {
             // Same page hash link
             e.preventDefault();

@@ -28,10 +28,10 @@ const Footer = () => {
             <div className={styles.linkGroup}>
               <h4>Product</h4>
               <ul>
-                <li><a href="#features">Features</a></li>
-                <li><a href="#how-it-works">How It Works</a></li>
-                <li><a href="#partners">Supported Builders</a></li>
-                <li><a href="#faq">FAQ</a></li>
+                <li><a href="/#bento-features">Features</a></li>
+                <li><a href="/#how-it-works">How It Works</a></li>
+                <li><a href="/#partners">Supported Builders</a></li>
+                <li><a href="/#faq">FAQ</a></li>
               </ul>
             </div>
 

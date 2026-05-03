@@ -110,7 +110,8 @@
 
 @media (max-width: 900px) {
   .layout { flex-direction: column; gap: 2.5rem; }
-  .info { flex: unset; }
+  .info { flex: unset; width: 100%; }
+  .formWrap { width: 100%; padding: 1.5rem; }
   .row { flex-direction: column; }
 }
 

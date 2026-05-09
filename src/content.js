@@ -1,211 +1,147 @@
-/**
- * content.js
- * Injected into active tab
- */
-import { getSelector } from './utils/selectorEngine.js';
+// ZERO-DEPENDENCY CONTENT SCRIPT FOR TYPEBRIDGE
+// This avoids large bundle sizes (4MB+) that block injection.
 
-let lastFocusedElement = null;
-let isActive = true;
+(function() {
+  console.log('TypeBridge: Content script ACTIVE in:', window.location.href);
 
-// Listen on document for focusin and click
-// Listen on document for focusin, click, and mousedown
-document.addEventListener('focusin', handleFocus, true);
-document.addEventListener('click', handleFocus, true);
-document.addEventListener('mousedown', (e) => {
-  if (!isActive) return;
-  chrome.runtime.sendMessage({ type: 'HEARTBEAT' });
-  handleFocus(e);
-}, true);
-
-document.addEventListener('selectionchange', () => {
-  if (!isActive) return;
-  const el = getDeepActiveElement();
-  if (el && el !== document.body && (el.isContentEditable || el.tagName === 'INPUT' || el.tagName === 'TEXTAREA')) {
-    handleFocus({ target: el, type: 'selection' });
-  }
-});
-
-function getTargetElement(e) {
-  if (e.composedPath) {
-    const path = e.composedPath();
-    return path[0];
-  }
-  return e.target;
-}
-
-function handleFocus(e) {
-  if (!isActive) return;
-  
-  let el = getTargetElement(e);
-  if (!el) return;
-
-  // Search for the first editable element in the hierarchy if we didn't land on one
-  let target = el;
-  while (target && target !== document.body) {
-    if (target.isContentEditable || target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
-      el = target;
-      break;
+  // --- MINIMAL SELECTOR ENGINE ---
+  function getSelector(element) {
+    if (!element) return '';
+    if (element === document.body) return 'body';
+    if (element.id) {
+      try {
+        const idSelector = `#${CSS.escape(element.id)}`;
+        if (document.querySelector(idSelector) === element) return idSelector;
+      } catch (e) {}
     }
-    target = target.parentElement;
-  }
-
-  // If still not editable, use elementsFromPoint on click
-  if (e.type === 'click' && !(el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable)) {
-    const elementsAtPoint = document.elementsFromPoint(e.clientX, e.clientY);
-    for (const cand of elementsAtPoint) {
-      if (cand.tagName === 'INPUT' || cand.tagName === 'TEXTAREA' || cand.isContentEditable) {
-        el = cand;
-        break;
-      }
-      if (['H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'P', 'SPAN'].includes(cand.tagName)) {
-        el = cand;
-        break;
+    const dataAttrs = ['data-block-id', 'data-id', 'data-type', 'data-block'];
+    for (const attr of dataAttrs) {
+      if (element.hasAttribute && element.hasAttribute(attr)) {
+        try {
+          const val = CSS.escape(element.getAttribute(attr));
+          const attrSelector = `[${attr}="${val}"]`;
+          if (document.querySelector(attrSelector) === element) return attrSelector;
+        } catch (e) {}
       }
     }
+    // Fallback to simple path
+    let path = [];
+    let current = element;
+    while (current && current.nodeType === Node.ELEMENT_NODE && current !== document.body && path.length < 5) {
+      let selector = current.nodeName.toLowerCase();
+      const parent = current.parentNode;
+      if (parent && parent.nodeType === Node.ELEMENT_NODE) {
+        const siblings = Array.from(parent.children);
+        const index = siblings.indexOf(current) + 1;
+        selector += `:nth-child(${index})`;
+      }
+      path.unshift(selector);
+      current = current.parentNode;
+    }
+    if (current === document.body) path.unshift('body');
+    return path.join(' > ');
   }
-  
-  const isEditable =
-    el.tagName === 'INPUT' ||
-    el.tagName === 'TEXTAREA' ||
-    el.isContentEditable;
-    
-  if (!isEditable && (e.type === 'click' || e.type === 'mousedown')) {
-    if (el.tagName === 'BODY' || el.tagName === 'HTML' || el.tagName === 'DIV' && el.children.length > 5) return;
+
+  let lastFocusedElement = null;
+  let lastFocusedSelector = null;
+  let isActive = true;
+
+  function getPreviewText(el) {
+    if (!el) return '';
+    let text = el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' ? el.value : el.innerText;
+    return (text || '').trim().substring(0, 150);
+  }
+
+  function handleFocus(e) {
+    if (!isActive) return;
+    let el = e.target;
+    if (el && el.nodeType === Node.TEXT_NODE) el = el.parentElement;
+    if (!el || el.nodeType !== Node.ELEMENT_NODE) return;
+
+    const isEditable = el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable || 
+                       el.closest('[contenteditable="true"]') || el.closest('.elementor-inline-editing');
+
+    if (!isEditable) return;
+
     lastFocusedElement = el;
+    lastFocusedSelector = getSelector(el);
     
-    chrome.runtime.sendMessage({
-      type: 'FOCUS_DETECTED',
-      payload: { 
-        tagName: el.tagName.toLowerCase(), 
-        isContentEditable: false,
-        previewText: getPreviewText(el),
-        selector: getSelector(el)
-      }
-    });
-    return;
+    try {
+      chrome.runtime.sendMessage({
+        type: 'FOCUS_DETECTED',
+        payload: {
+          tagName: el.tagName.toLowerCase(),
+          isContentEditable: !!el.isContentEditable,
+          previewText: getPreviewText(el),
+          selector: lastFocusedSelector
+        }
+      });
+    } catch (err) {}
   }
 
-  if (!isEditable) return;
-  if (lastFocusedElement === el && (e.type === 'poll' || e.type === 'selection')) return; 
-  
-  lastFocusedElement = el;
-
-  const payload = {
-    tagName: el.tagName.toLowerCase(),
-    isContentEditable: el.isContentEditable,
-    previewText: getPreviewText(el),
-    selector: getSelector(el)
-  };
-
-  chrome.runtime.sendMessage({
-    type: 'FOCUS_DETECTED',
-    payload
+  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.type === 'APPLY_COPY') {
+      handleApply(message.payload);
+    } else if (message.type === 'PING') {
+      sendResponse({ status: 'ok' });
+    }
   });
-}
 
-function getDeepActiveElement() {
-  let el = document.activeElement;
-  while (el && el.shadowRoot && el.shadowRoot.activeElement) {
-    el = el.shadowRoot.activeElement;
-  }
-  return el;
-}
+  // BROADCAST LISTENER (essential for complex iframes)
+  window.addEventListener('TYPEBRIDGE_APPLY_BROADCAST', (e) => {
+    console.log('TypeBridge: Received broadcast apply');
+    if (e.detail) handleApply(e.detail);
+  });
 
-// Polling for focus (fallback for builders that intercept all events)
-setInterval(() => {
-  if (!isActive) return;
-  const el = getDeepActiveElement();
-  if (el && el !== document.body && el !== lastFocusedElement && (el.isContentEditable || el.tagName === 'INPUT' || el.tagName === 'TEXTAREA')) {
-    handleFocus({ target: el, type: 'poll' });
-  }
-}, 500);
-
-function getPreviewText(el) {
-  if (!el) return '';
-  let text = '';
-  if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
-    text = el.value || '';
-  } else {
-    text = el.innerText || el.textContent || '';
-  }
-  return text.trim().substring(0, 150); // Increased limit for better matching
-}
-
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.type === 'APPLY_COPY') {
-    handleApply(message.payload);
-  } else if (message.type === 'EXIT_SELECT_MODE') {
-    cleanup();
-  } else if (message.type === 'PING') {
-    sendResponse({ status: 'ok' });
-  }
-});
-
-// Listen for broadcasted events from background script (handles all frames)
-window.addEventListener('TYPEBRIDGE_APPLY_BROADCAST', (e) => {
-  handleApply(e.detail);
-});
-
-function handleApply(payload) {
-  // Fallback to activeElement if lastFocusedElement isn't set
-  const deepActive = getDeepActiveElement();
-  if (!lastFocusedElement && deepActive && deepActive !== document.body) {
-    lastFocusedElement = deepActive;
-  }
-
-  if (!lastFocusedElement) {
-    return;
-  }
-
-  try {
-    const element = lastFocusedElement;
+  function handleApply(payload) {
     const newText = payload.newText;
-    const originalText = getPreviewText(element);
-    const targetSelector = getSelector(element);
-
-    if (element.tagName === 'INPUT') {
-      const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
-        window.HTMLInputElement.prototype, 'value'
-      ).set;
-      nativeInputValueSetter.call(element, newText);
-      element.dispatchEvent(new Event('input', { bubbles: true }));
-      element.dispatchEvent(new Event('change', { bubbles: true }));
-    } else if (element.tagName === 'TEXTAREA') {
-      const nativeTextareaSetter = Object.getOwnPropertyDescriptor(
-        window.HTMLTextAreaElement.prototype, 'value'
-      ).set;
-      nativeTextareaSetter.call(element, newText);
-      element.dispatchEvent(new Event('input', { bubbles: true }));
-      element.dispatchEvent(new Event('change', { bubbles: true }));
-    } else if (element.isContentEditable) {
-      element.focus();
-      element.innerText = newText;
-      element.dispatchEvent(new Event('input', { bubbles: true }));
-      element.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: newText }));
-    } else {
-      // Fallback for elements tracked via click that might not be strictly editable yet
-      element.innerText = newText;
-      element.dispatchEvent(new Event('input', { bubbles: true }));
-      element.dispatchEvent(new Event('change', { bubbles: true }));
+    let element = lastFocusedElement;
+    
+    // Recovery logic
+    if (!element && lastFocusedSelector) element = document.querySelector(lastFocusedSelector);
+    if (!element) element = document.activeElement;
+    if (!element || element === document.body) {
+      console.warn('TypeBridge: No valid target element found for apply.');
+      return;
     }
 
-    chrome.runtime.sendMessage({
-      type: 'APPLY_SUCCESS',
-      payload: { 
-        sectionId: payload.sectionId, 
-        originalText, 
-        targetSelector 
-      }
-    });
-  } catch (error) {
-    chrome.runtime.sendMessage({
-      type: 'APPLY_ERROR',
-      payload: { sectionId: payload.sectionId, reason: error.message || 'UNKNOWN_ERROR' }
-    });
-  }
-}
+    console.log('TypeBridge: Applying to', element.tagName);
 
-function cleanup() {
-  isActive = false;
-  document.removeEventListener('focusin', handleFocus);
-}
+    try {
+      if (element.tagName === 'INPUT') {
+        const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set;
+        if (setter) setter.call(element, newText);
+        else element.value = newText;
+      } else if (element.tagName === 'TEXTAREA') {
+        const setter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value')?.set;
+        if (setter) setter.call(element, newText);
+        else element.value = newText;
+      } else {
+        element.focus();
+        // Method 1: execCommand
+        document.execCommand('selectAll', false, null);
+        const success = document.execCommand('insertText', false, newText);
+        
+        // Method 2: innerHTML (brute force)
+        if (!success) {
+          element.innerHTML = newText;
+        }
+      }
+      
+      // Dispatch events to notify frameworks
+      element.dispatchEvent(new Event('input', { bubbles: true }));
+      element.dispatchEvent(new Event('change', { bubbles: true }));
+      element.dispatchEvent(new Event('blur', { bubbles: true }));
+      
+      chrome.runtime.sendMessage({ type: 'APPLY_SUCCESS', payload: { sectionId: payload.sectionId } });
+    } catch (err) {
+      console.error('TypeBridge Apply Error:', err);
+    }
+  }
+
+  // Use capture to get ahead of visual builders
+  document.addEventListener('focusin', handleFocus, true);
+  document.addEventListener('click', handleFocus, true);
+  document.addEventListener('mousedown', handleFocus, true);
+
+})();

@@ -29,20 +29,39 @@ class ErrorBoundary extends React.Component {
           gap: '10px'
         }}>
           <h2>Something went wrong.</h2>
-          <p style={{ fontSize: '14px' }}>{this.state.error?.message}</p>
-          <button 
-            onClick={() => window.location.reload()}
-            style={{
-              padding: '8px 16px',
-              background: '#ef4444',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer'
-            }}
-          >
-            Reload Extension
-          </button>
+          <p style={{ fontSize: '14px', maxWidth: '300px', wordBreak: 'break-word' }}>{this.state.error?.toString() || 'Unknown error'}</p>
+          <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+            <button 
+              onClick={() => {
+                const text = `Error: ${this.state.error?.toString()}\nStack: ${this.state.error?.stack}`;
+                navigator.clipboard.writeText(text);
+                alert('Error details copied to clipboard!');
+              }}
+              style={{
+                padding: '8px 16px',
+                background: '#4b5563',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer'
+              }}
+            >
+              Copy Details
+            </button>
+            <button 
+              onClick={() => window.location.reload()}
+              style={{
+                padding: '8px 16px',
+                background: '#ef4444',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer'
+              }}
+            >
+              Reload Extension
+            </button>
+          </div>
         </div>
       );
     }

@@ -6,7 +6,7 @@
  */
 export function getSelector(element) {
   if (!element) {
-    console.warn('getSelector called with null or undefined element');
+    console.warn('getSelector triggered with null or undefined element');
     return '';
   }
 
@@ -24,7 +24,7 @@ export function getSelector(element) {
   }
 
   // 2. Data attributes
-  const targetDataAttrs = ['data-block-id', 'data-widget-id', 'data-node-id', 'data-id'];
+  const targetDataAttrs = ['data-block-id', 'data-widget-id', 'data-node-id', 'data-id', 'data-type', 'data-name', 'data-block'];
   for (const attr of targetDataAttrs) {
     if (element.hasAttribute(attr)) {
       // Escape the value to prevent selector breaking
@@ -37,8 +37,13 @@ export function getSelector(element) {
   }
 
   // 3. Unique class combination
-  if (element.className && typeof element.className === 'string') {
-    const classes = element.className.trim().split(/\s+/).filter(Boolean);
+  let className = element.className;
+  if (typeof className !== 'string' && className && typeof className.baseVal === 'string') {
+    className = className.baseVal; // Handle SVGAnimatedString
+  }
+
+  if (className && typeof className === 'string') {
+    const classes = className.trim().split(/\s+/).filter(Boolean);
     if (classes.length > 0) {
       const classSelector = '.' + classes.map(CSS.escape).join('.');
       if (verifySelector(classSelector) && document.querySelector(classSelector) === element) {

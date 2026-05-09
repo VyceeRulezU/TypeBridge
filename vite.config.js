@@ -10,10 +10,21 @@ export default defineConfig({
       watchFilePaths: ['src/sidepanel/sidepanel.html'],
     }),
   ],
+  build: {
+    // Keep it simple. Zero-dependency content.js shouldn't need manualChunks to stay small.
+  },
   resolve: {
     alias: {
       '@': '/src',
     },
+  },
+  define: {
+    'process.env.NODE_ENV': JSON.stringify('production')
+  },
+  css: {
+    modules: {
+      generateScopedName: '[name]__[local]'
+    }
   },
   test: {
     environment: 'jsdom',

@@ -45,33 +45,37 @@ export default function PasteArea({ onPaste, initialText = '' }) {
 
   const processFile = async (file) => {
     setIsLoading(true);
+    console.log('TypeBridge: processFile started for:', file.name, 'type:', file.type);
     try {
       if (file.name.endsWith('.docx')) {
         const arrayBuffer = await file.arrayBuffer();
         const result = await mammoth.extractRawText({ arrayBuffer });
+        console.log('TypeBridge: Docx extracted length:', result.value?.length);
         setText(result.value);
       } else if (file.name.endsWith('.pdf')) {
         const arrayBuffer = await file.arrayBuffer();
         const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        console.log('TypeBridge: PDF pages count:', pdf.numPages);
         let fullText = '';
         for (let i = 1; i <= pdf.numPages; i++) {
           const page = await pdf.getPage(i);
           const textContent = await page.getTextContent();
-          // Extract text cleanly
           const pageText = textContent.items.map(item => item.str).join(' ');
-          // Basic heuristic to add newlines where multiple spaces exist
           const cleanPageText = pageText.replace(/\s{2,}/g, '\n\n');
           fullText += cleanPageText + '\n\n';
         }
+        console.log('TypeBridge: PDF extracted length:', fullText.trim().length);
         setText(fullText.trim());
       } else if (file.type.startsWith('text/')) {
         const content = await file.text();
+        console.log('TypeBridge: Text file length:', content.length);
         setText(content);
       } else {
+        console.warn('TypeBridge: Unsupported file type:', file.type);
         alert('Unsupported file type. Please upload DOCX, PDF, or TXT.');
       }
     } catch (error) {
-      console.error('Error reading file:', error);
+      console.error('TypeBridge: Error reading file:', error);
       alert('Error extracting text from file.');
     } finally {
       setIsLoading(false);

@@ -49,9 +49,15 @@
   margin: 0;
 }
 
+.appliedCard .heading,
+.appliedCard .text {
+  text-decoration: line-through !important;
+  color: var(--color-text-400);
+  opacity: 0.7;
+}
+
 .strikethrough {
-  text-decoration: line-through;
-  color: var(--color-text-500);
+  text-decoration: line-through !important;
 }
 
 .successIconWrap {

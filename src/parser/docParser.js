@@ -16,7 +16,11 @@
  * @returns {Section[]} Array of section objects
  */
 export function parseDocument(rawText) {
-  if (!rawText || !rawText.trim()) return [];
+  console.log('TypeBridge Parser: Starting parse with text length:', rawText?.length);
+  if (!rawText || !rawText.trim()) {
+    console.warn('TypeBridge Parser: Empty text received.');
+    return [];
+  }
 
   const lines = rawText.split(/\r?\n/).map(line => line.trim());
   const sections = [];
@@ -47,6 +51,7 @@ export function parseDocument(rawText) {
     const wordCount = line.split(/\s+/).filter(w => w.length > 0).length;
     const hasLetters = /[A-Za-z]/.test(line);
 
+    // Markdown style
     if (/^###\s*/.test(line)) {
       isHeading = true;
       level = 'h3';
@@ -59,15 +64,21 @@ export function parseDocument(rawText) {
       isHeading = true;
       level = 'h1';
       headingText = line.replace(/^#\s*/, '');
-    } else if (line.length > 0 && line === line.toUpperCase() && hasLetters && wordCount >= 3) {
+    } 
+    // ALL CAPS line
+    else if (line.length > 0 && line.length < 100 && line === line.toUpperCase() && hasLetters && wordCount >= 2) {
       isHeading = true;
       level = 'h2';
       headingText = line;
-    } else if (line.length > 0 && line.length < 60 && !line.endsWith('.') && i + 1 < lines.length && lines[i+1] === '') {
+    } 
+    // Short line followed by empty line
+    else if (line.length > 0 && line.length < 70 && !line.endsWith('.') && i + 1 < lines.length && lines[i+1] === '') {
       isHeading = true;
       level = 'h2';
       headingText = line;
-    } else if (/^\d+\.\s+/.test(line)) {
+    } 
+    // Numbered list item as heading
+    else if (/^\d+\.\s+[A-Z]/.test(line) && line.length < 80) {
       isHeading = true;
       level = 'h3';
       headingText = line.replace(/^\d+\.\s+/, '');
@@ -81,7 +92,7 @@ export function parseDocument(rawText) {
       currentSection = createSection(level, headingText);
     } else {
       if (!currentSection) {
-        currentSection = createSection('body', 'Document');
+        currentSection = createSection('body', 'Document Start');
       }
       currentSection.body.push(line);
     }
@@ -101,14 +112,17 @@ export function parseDocument(rawText) {
     
     sec.body = bodyLines.join('\n');
 
-    if (!hasSeenAnyHeading && sec.heading === 'Document') {
-      result.push(sec);
-    } else if (sec.heading === 'Document' && bodyLines.length === 0) {
+    if (!hasSeenAnyHeading && sec.heading === 'Document Start') {
+      if (sec.body.trim()) result.push(sec);
+    } else if (sec.heading === 'Document Start' && bodyLines.length === 0) {
       // Skip empty initial document block if other headings exist
     } else {
-      result.push(sec);
+      if (sec.heading.trim() || sec.body.trim()) {
+        result.push(sec);
+      }
     }
   }
 
+  console.log(`TypeBridge Parser: Finished. Found ${result.length} sections.`);
   return result;
 }

@@ -22,7 +22,7 @@ export default function SectionCard({ section, isFocused, onApply, onSkip, onRes
       <div className={styles.header}>
         <div className={styles.titleWrap}>
           <span className={styles.levelBadge}>{level.toUpperCase()}</span>
-          <h3 className={`${styles.heading} ${!isPending ? styles.strikethrough : ''}`}>
+          <h3 className={`${styles.heading} ${isApplied ? styles.strikethrough : ''}`}>
             {heading || '(No Heading)'}
           </h3>
         </div>
@@ -70,7 +70,7 @@ export default function SectionCard({ section, isFocused, onApply, onSkip, onRes
 
             {isApplied && (
               <div className={styles.appliedContent}>
-                {body && <div className={styles.text}>{body}</div>}
+                {body && <div className={`${styles.text} ${styles.strikethrough}`}>{body}</div>}
                 <div className={styles.actions}>
                   <button className={styles.reapplyBtn} onClick={() => onApply(id)}>Re-apply</button>
                   {appliedAt && (

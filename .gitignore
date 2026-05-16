@@ -3,3 +3,4 @@ dist
 CopyDeploy_PRD.docx
 .DS_Store
 *.log
+.env

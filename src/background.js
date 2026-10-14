@@ -138,9 +138,14 @@ function applyThroughBuilderApi(adapter, text) {
         options: { external: true }
       });
 
-      // While inline editing is active Elementor pauses rendering; the DOM must be written too
-      const view = container.view;
-      return { ok: true, domWriteNeeded: view?.allowRender === false };
+      // Read the value back from Elementor's model — this is what gets saved on Update/Publish
+      const saved = container.settings?.get?.(key);
+      return {
+        ok: true,
+        confirmed: saved === value,
+        // While inline editing is active Elementor pauses rendering; the open editor must be written too
+        domWriteNeeded: container.view?.allowRender === false
+      };
     }
 
     if (adapter.type === 'gutenberg') {
@@ -160,8 +165,12 @@ function applyThroughBuilderApi(adapter, text) {
       const attribute = attributeFor[block.name];
       if (!attribute) return { ok: false, reason: `Unsupported block type: ${block.name}` };
 
-      data.dispatch('core/block-editor').updateBlockAttributes(adapter.clientId, { [attribute]: blocks.join('<br><br>') });
-      return { ok: true };
+      const html = blocks.join('<br><br>');
+      data.dispatch('core/block-editor').updateBlockAttributes(adapter.clientId, { [attribute]: html });
+
+      const saved = data.select('core/block-editor').getBlockAttributes(adapter.clientId)?.[attribute];
+      const plain = (h) => new DOMParser().parseFromString(String(h ?? ''), 'text/html').body.textContent.replace(/\s+/g, ' ').trim();
+      return { ok: true, confirmed: plain(saved) === plain(html) };
     }
   } catch (e) {
     return { ok: false, reason: e?.message || String(e) };
@@ -204,24 +213,29 @@ async function applyCopy(payload) {
   if (result?.needsAdapter) {
     const adapter = result.needsAdapter;
     const { originalText, selector } = result;
-    let adapterResult;
-    try {
-      adapterResult = await runBuilderAdapter(tab.id, adapter, payload.newText);
-    } catch (e) {
-      adapterResult = { ok: false, reason: e.message };
-    }
+    const runAdapter = async () => {
+      try {
+        return await runBuilderAdapter(tab.id, adapter, payload.newText);
+      } catch (e) {
+        return { ok: false, reason: e.message };
+      }
+    };
+
+    let adapterResult = await runAdapter();
     console.log('TypeBridge: builder adapter', adapter.type, adapterResult);
 
-    if (adapterResult.ok && !adapterResult.domWriteNeeded) {
-      const verified = await sendToFocusedFrame(tab.id, {
-        type: 'VERIFY_APPLY',
-        payload: { adapter, selector, newText: payload.newText }
-      });
-      if (verified?.ok) return { ok: true, originalText, selector };
+    if (adapterResult.ok && adapterResult.domWriteNeeded) {
+      // Inline editing is open: put the text in the open editor so it doesn't overwrite
+      // the model with the old copy later, then set the model value again.
+      await sendToFocusedFrame(tab.id, { type: 'APPLY_COPY', payload: { ...payload, adapter, forceGeneric: true, skipVerify: true } });
+      adapterResult = await runAdapter();
     }
 
-    // Write the DOM directly (needed mid inline-edit, or when the API route failed)
-    result = await sendToFocusedFrame(tab.id, { type: 'APPLY_COPY', payload: { ...payload, forceGeneric: true } });
+    // The builder's own model holds the new copy, so it will render and be saved on publish
+    if (adapterResult.ok && adapterResult.confirmed) return { ok: true, originalText, selector };
+
+    // API route unavailable: write the DOM directly and verify it sticks
+    result = await sendToFocusedFrame(tab.id, { type: 'APPLY_COPY', payload: { ...payload, adapter, forceGeneric: true } });
   }
 
   if (!result || !result.ok) {

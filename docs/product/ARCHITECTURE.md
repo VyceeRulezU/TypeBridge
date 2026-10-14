@@ -51,6 +51,10 @@ TypeBridge is a Chrome Extension built with Manifest V3, utilizing a React side 
 4. **Background** injects the content script if missing, then sends `APPLY_COPY` to the focused frame only.
 5. **Content Script** writes the text (native value setter for inputs, `insertText` for contenteditable),
    dispatches `input` / `change` / `blur`, and responds `{ ok, originalText, selector }` or `{ ok: false, reason }`.
+   For Elementor and Gutenberg fields it instead responds `{ needsAdapter }`; the Background then writes the copy
+   through the builder's API in the page's MAIN world (`$e.run('document/elements/settings')` /
+   `wp.data updateBlockAttributes`) and confirms it by reading the saved value back. Direct DOM writes are only
+   reported as applied once the text is still present after the builder re-renders (up to ~3s).
 6. **Background** forwards `APPLY_SUCCESS` or `APPLY_ERROR` to the panel.
 7. **Panel** sends `SESSION_UPDATE` whenever section statuses change, so the session can be restored (`SESSION_RESTORE`).
 

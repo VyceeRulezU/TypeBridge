@@ -121,10 +121,6 @@
       handleApply(message.payload).then(sendResponse);
       return true; // async response
     }
-    if (message.type === 'VERIFY_APPLY') {
-      verifyApplied(message.payload).then(sendResponse);
-      return true;
-    }
     if (message.type === 'PING') {
       sendResponse({ status: 'ok' });
     }
@@ -183,20 +179,17 @@
     return normalize(element.innerText).includes(normalize(newText));
   }
 
-  // Builders may revert a change a moment later (re-render from their model),
-  // so only report success if the text is still there after a short wait.
+  // Builders may revert a change (re-render from their model), and some re-render
+  // asynchronously with a blank/loading moment in between. Wait up to ~3s for the
+  // text to be present on two consecutive checks before calling it applied.
   async function textSticks(getElement, newText) {
-    for (const delay of [400, 500]) {
-      await sleep(delay);
-      if (!hasText(getElement(), newText)) return false;
+    let streak = 0;
+    for (let waited = 0; waited < 3000; waited += 250) {
+      await sleep(250);
+      streak = hasText(getElement(), newText) ? streak + 1 : 0;
+      if (streak >= 2) return true;
     }
-    return true;
-  }
-
-  async function verifyApplied(payload) {
-    const getElement = () => adapterElement(payload.adapter) ||
-      safeQuery(payload.selector);
-    return { ok: await textSticks(getElement, payload.newText ?? '') };
+    return false;
   }
 
   function findTarget() {
@@ -271,9 +264,12 @@
         replaceEditableText(element, newText);
       }
 
-      // Notify frameworks that commit on change/blur
       element.dispatchEvent(new Event('change', { bubbles: true }));
-      element.dispatchEvent(new Event('blur', { bubbles: true }));
+      // Form fields often commit on blur. Rich-text editors are left alone: a fake blur
+      // makes editors like Elementor end inline editing and re-render mid-apply.
+      if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {
+        element.dispatchEvent(new Event('blur', { bubbles: true }));
+      }
 
       lastReported = null;
     } catch (err) {
@@ -281,7 +277,9 @@
       return { ok: false, reason: err?.message || 'Failed to apply text.' };
     }
 
-    const getElement = () => (element.isConnected ? element : safeQuery(selector));
+    // The builder may replace the node when it re-renders; look it up again if so
+    const getElement = () => (element.isConnected ? element : adapterElement(payload.adapter) || safeQuery(selector));
+    if (payload.skipVerify) return { ok: true, originalText, selector };
     if (!(await textSticks(getElement, newText))) {
       return { ok: false, reason: 'The builder undid the change. Double-click the text so its cursor is blinking, then apply again.' };
     }

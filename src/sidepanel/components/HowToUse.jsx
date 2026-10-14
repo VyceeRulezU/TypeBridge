@@ -4,7 +4,7 @@ import styles from './HowToUse.module.css';
 
 export default function HowToUse() {
   const steps = [
-    { title: 'Paste or Upload', desc: 'Add your structured document or file.' },
+    { title: 'Paste, Upload or Link', desc: 'Add your document, a file, or a Google Docs link.' },
     { title: 'Parse Document', desc: 'Break the text into sections.' },
     { title: 'Double-Click in Builder', desc: 'Ensure the cursor is flashing in Webflow/Framer.' },
     { title: 'Click Apply', desc: 'Instantly sync the text to the page.' }

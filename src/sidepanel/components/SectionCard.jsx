@@ -3,14 +3,19 @@ import { FiCheck, FiEdit2 } from 'react-icons/fi';
 import DiffPreview from './DiffPreview.jsx';
 import styles from './SectionCard.module.css';
 
-export default function SectionCard({ section, isFocused, onApply, onSkip, onRestore, onUpdateSection }) {
-  const { id, level, heading, body, status, appliedAt, originalText } = section;
+export default function SectionCard({ section, isFocused, focusPreview, onApply, onSkip, onRestore, onUpdateSection }) {
+  const { id, level, heading, body, status, appliedAt } = section;
   const [isEditing, setIsEditing] = React.useState(false);
   const [editValue, setEditValue] = React.useState(body || '');
 
   const isApplied = status === 'applied';
   const isSkipped = status === 'skipped';
   const isPending = status === 'pending';
+
+  const startEditing = () => {
+    setEditValue(body || '');
+    setIsEditing(true);
+  };
 
   const handleSave = () => {
     onUpdateSection(id, editValue);
@@ -28,7 +33,7 @@ export default function SectionCard({ section, isFocused, onApply, onSkip, onRes
         </div>
         <div className={styles.headerActions}>
           {!isEditing && (
-            <button className={styles.editIconBtn} onClick={() => setIsEditing(true)} title="Edit Text">
+            <button className={styles.editIconBtn} onClick={startEditing} title="Edit Text">
               <FiEdit2 />
             </button>
           )}
@@ -60,9 +65,14 @@ export default function SectionCard({ section, isFocused, onApply, onSkip, onRes
             {isPending && (
               <>
                 {body && <div className={styles.text}>{body}</div>}
-                {isFocused && <DiffPreview currentText={originalText} newText={body || heading} />}
+                {isFocused && <DiffPreview currentText={focusPreview} newText={body || heading} />}
                 <div className={styles.actions}>
                   <button className={styles.applyBtn} onClick={() => onApply(id)}>Apply</button>
+                  {heading && body && (
+                    <button className={styles.skipBtn} onClick={() => onApply(id, 'heading')} title="Apply the heading text to the selected field">
+                      Apply Heading
+                    </button>
+                  )}
                   <button className={styles.skipBtn} onClick={() => onSkip(id)}>Skip</button>
                 </div>
               </>

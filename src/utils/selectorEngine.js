@@ -1,3 +1,9 @@
+// CSS.escape is missing in some environments (e.g. jsdom); fall back to a simple escaper
+function cssEscape(value) {
+  if (typeof CSS !== 'undefined' && CSS.escape) return CSS.escape(value);
+  return String(value).replace(/[^a-zA-Z0-9_-]/g, '\\$&');
+}
+
 /**
  * Generates the most stable unique CSS selector for a DOM element
  * Priority: id > data-attribute > nth-child path
@@ -16,7 +22,7 @@ export function getSelector(element) {
 
   // 1. Unique ID
   if (element.id) {
-    const escapedId = CSS.escape(element.id);
+    const escapedId = cssEscape(element.id);
     const idSelector = `#${escapedId}`;
     if (verifySelector(idSelector) && document.querySelector(idSelector) === element) {
       return idSelector;
@@ -28,7 +34,7 @@ export function getSelector(element) {
   for (const attr of targetDataAttrs) {
     if (element.hasAttribute(attr)) {
       // Escape the value to prevent selector breaking
-      const val = CSS.escape(element.getAttribute(attr));
+      const val = cssEscape(element.getAttribute(attr));
       const attrSelector = `[${attr}="${val}"]`;
       if (verifySelector(attrSelector) && document.querySelector(attrSelector) === element) {
         return attrSelector;
@@ -45,7 +51,7 @@ export function getSelector(element) {
   if (className && typeof className === 'string') {
     const classes = className.trim().split(/\s+/).filter(Boolean);
     if (classes.length > 0) {
-      const classSelector = '.' + classes.map(CSS.escape).join('.');
+      const classSelector = '.' + classes.map(cssEscape).join('.');
       if (verifySelector(classSelector) && document.querySelector(classSelector) === element) {
         return classSelector;
       }

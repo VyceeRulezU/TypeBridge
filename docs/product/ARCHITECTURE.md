@@ -23,7 +23,7 @@ TypeBridge is a Chrome Extension built with Manifest V3, utilizing a React side 
 - **Location**: `/src/parser/docParser.js`
 
 ### 5. Selector Engine
-- **Responsibility**: Maintaining a registry of CSS selectors and event dispatch strategies for different builders.
+- **Responsibility**: Generating stable CSS selectors for target fields. (The content script carries its own minimal copy to stay dependency-free.)
 - **Location**: `/src/utils/selectorEngine.js`
 
 ## Data Model
@@ -32,24 +32,29 @@ TypeBridge is a Chrome Extension built with Manifest V3, utilizing a React side 
 ```json
 {
   "id": "uuid",
-  "type": "heading-1 | heading-2 | paragraph | cta",
-  "content": "Raw string content",
-  "applied": false,
-  "timestamp": 123456789
+  "level": "h1 | h2 | h3 | body",
+  "heading": "Section heading (\"Document\" for text before the first heading)",
+  "body": "Section body text",
+  "status": "pending | applied | skipped",
+  "appliedAt": 1715000000000,
+  "originalText": "Field text that was replaced",
+  "targetSelector": "CSS selector of the field written to"
 }
 ```
 
-## Message Flow Diagram
+## Message Flow
 
-1. **User pastes text** in Side Panel.
-2. **Side Panel** calls `docParser.js` -> updates local state.
-3. **User clicks "Apply"** on a SectionCard.
-4. **Side Panel** sends message to Background: `{ action: 'APPLY_SECTION', payload: section }`.
-5. **Background** forwards message to Content Script in active tab.
-6. **Content Script** identifies active field via `selectorEngine.js`.
-7. **Content Script** injects content and dispatches necessary events (input, change, blur).
-8. **Content Script** sends ACK to Background -> forwards to Side Panel to mark as "applied".
+1. **User pastes text** in the Side Panel -> `docParser.js` -> `START_SESSION` to Background.
+2. **User clicks into a field** in the builder -> Content Script sends `FOCUS_DETECTED`.
+   Background records the tab + frame (`focusTarget`) and forwards it to the panel over the `sidepanel` port.
+3. **User clicks "Apply"** (or "Apply Heading") -> Panel sends `APPLY_COPY { sectionId, part, newText }`.
+4. **Background** injects the content script if missing, then sends `APPLY_COPY` to the focused frame only.
+5. **Content Script** writes the text (native value setter for inputs, `insertText` for contenteditable),
+   dispatches `input` / `change` / `blur`, and responds `{ ok, originalText, selector }` or `{ ok: false, reason }`.
+6. **Background** forwards `APPLY_SUCCESS` or `APPLY_ERROR` to the panel.
+7. **Panel** sends `SESSION_UPDATE` whenever section statuses change, so the session can be restored (`SESSION_RESTORE`).
 
 ## Storage Strategy
-- **chrome.storage.local**: Used for persisting the current session (last pasted doc, application progress).
-- **Session State**: React state in the side panel for UI responsiveness.
+- **chrome.storage.session**: Current session (sections + statuses) and the last focused tab/frame.
+  Survives service-worker restarts and side panel reloads; cleared when the browser closes.
+- **React state** in the side panel for UI responsiveness.

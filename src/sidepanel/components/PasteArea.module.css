@@ -142,3 +142,48 @@
   border-radius: var(--radius-md);
   z-index: 10;
 }
+
+.linkRow {
+  display: flex;
+  gap: var(--space-2);
+  width: 100%;
+}
+
+.linkInput {
+  flex: 1;
+  min-width: 0;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text-900);
+  font-size: var(--font-size-sm);
+}
+
+.linkInput:focus {
+  outline: none;
+  border-color: var(--color-primary-light);
+}
+
+.importBtn {
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+  border: none;
+  background-color: var(--color-primary);
+  color: var(--color-surface);
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-base);
+}
+
+.importBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.error {
+  width: 100%;
+  margin: calc(-1 * var(--space-2)) 0 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-error);
+}

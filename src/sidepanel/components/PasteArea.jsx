@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import * as mammoth from 'mammoth';
 import * as pdfjsLib from 'pdfjs-dist';
 import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.mjs?url';
+import { htmlToStructuredText, fetchGoogleDoc, isGoogleDocLink } from '../../parser/importers.js';
 import styles from './PasteArea.module.css';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
@@ -14,10 +15,43 @@ export default function PasteArea({ onPaste, initialText = '' }) {
   }, [initialText]);
   const [isDragging, setIsDragging] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [docLink, setDocLink] = useState('');
+  const [error, setError] = useState('');
   const fileInputRef = useRef(null);
 
-  const handleSubmit = () => {
-    if (text.trim()) onPaste(text);
+  const importGoogleDoc = async (url) => {
+    setIsLoading(true);
+    setError('');
+    try {
+      return await fetchGoogleDoc(url);
+    } catch (err) {
+      setError(err.message);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleImport = async () => {
+    const imported = await importGoogleDoc(docLink);
+    if (imported) {
+      setText(imported);
+      setDocLink('');
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!text.trim()) return;
+    // A Google Docs link pasted into the main box: import it, then parse
+    if (isGoogleDocLink(text)) {
+      const imported = await importGoogleDoc(text);
+      if (imported) {
+        setText(imported);
+        onPaste(imported);
+      }
+      return;
+    }
+    onPaste(text);
   };
 
   const handleDragOver = (e) => {
@@ -49,9 +83,9 @@ export default function PasteArea({ onPaste, initialText = '' }) {
     try {
       if (file.name.endsWith('.docx')) {
         const arrayBuffer = await file.arrayBuffer();
-        const result = await mammoth.extractRawText({ arrayBuffer });
-        console.log('TypeBridge: Docx extracted length:', result.value?.length);
-        setText(result.value);
+        // Convert via HTML so Word heading styles become sections
+        const result = await mammoth.convertToHtml({ arrayBuffer });
+        setText(htmlToStructuredText(result.value));
       } else if (file.name.endsWith('.pdf')) {
         const arrayBuffer = await file.arrayBuffer();
         const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
@@ -90,10 +124,26 @@ export default function PasteArea({ onPaste, initialText = '' }) {
       onDrop={handleDrop}
     >
 
+      <div className={styles.linkRow}>
+        <input
+          type="url"
+          className={styles.linkInput}
+          placeholder="Paste a Google Docs link"
+          value={docLink}
+          onChange={e => setDocLink(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && docLink.trim() && handleImport()}
+          disabled={isLoading}
+        />
+        <button className={styles.importBtn} onClick={handleImport} disabled={!docLink.trim() || isLoading}>
+          Import
+        </button>
+      </div>
+      {error && <p className={styles.error}>{error}</p>}
+
       <div className={styles.dropZone}>
         <textarea
           className={styles.textarea}
-          placeholder="Paste structured document here or drag & drop a PDF/DOCX file"
+          placeholder="Paste structured document here, drag & drop a PDF/DOCX file, or paste a Google Docs link"
           value={text}
           onChange={e => setText(e.target.value)}
           disabled={isLoading}
@@ -101,7 +151,7 @@ export default function PasteArea({ onPaste, initialText = '' }) {
         {text.trim() && !isLoading && (
           <button className={styles.clearBtn} onClick={() => setText('')}>Clear</button>
         )}
-        {isLoading && <div className={styles.loadingOverlay}>Extracting text...</div>}
+        {isLoading && <div className={styles.loadingOverlay}>Importing document...</div>}
       </div>
       
       <div className={styles.actions}>

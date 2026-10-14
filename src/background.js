@@ -2,55 +2,80 @@
 
 let sidePanelPort = null;
 
-// Track the active session state
-let sessionState = {
+const emptySession = () => ({
   sections: [],
   sessionStartedAt: null,
   appliedCount: 0,
   skippedCount: 0,
   totalCount: 0
-};
-
-// Listen for connection from side panel
-chrome.runtime.onConnect.addListener((port) => {
-  if (port.name === 'sidepanel') {
-    sidePanelPort = port;
-    console.log('TypeBridge: Side panel connected');
-    
-    // Send current session state to newly connected panel
-    port.postMessage({ type: 'SESSION_RESTORE', payload: sessionState });
-
-    port.onDisconnect.addListener(() => {
-      sidePanelPort = null;
-      console.log('TypeBridge: Side panel disconnected');
-    });
-  }
 });
 
-// Helper to forward messages to the side panel port
+// In-memory copies. The service worker can be terminated at any time, so both
+// are mirrored to chrome.storage.session and reloaded lazily.
+let sessionState = emptySession();
+// The tab + frame where the user last focused an editable field
+let focusTarget = null;
+let stateLoaded = null;
+
+function loadState() {
+  if (!stateLoaded) {
+    stateLoaded = chrome.storage.session.get(['sessionState', 'focusTarget']).then((stored) => {
+      if (stored.sessionState) sessionState = stored.sessionState;
+      if (stored.focusTarget) focusTarget = stored.focusTarget;
+    }).catch(() => {});
+  }
+  return stateLoaded;
+}
+
+function saveSession() {
+  chrome.storage.session.set({ sessionState }).catch(() => {});
+}
+
+function countStatuses(sections) {
+  return {
+    appliedCount: sections.filter(s => s.status === 'applied').length,
+    skippedCount: sections.filter(s => s.status === 'skipped').length,
+    totalCount: sections.length
+  };
+}
+
+// Open the side panel when the toolbar icon is clicked
+chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true })
+  .catch((e) => console.error('TypeBridge: Failed to set panel behavior:', e));
+
+// Listen for connection from side panel
+chrome.runtime.onConnect.addListener(async (port) => {
+  if (port.name !== 'sidepanel') return;
+  sidePanelPort = port;
+  console.log('TypeBridge: Side panel connected');
+
+  port.onDisconnect.addListener(() => {
+    if (sidePanelPort === port) sidePanelPort = null;
+    console.log('TypeBridge: Side panel disconnected');
+  });
+
+  await loadState();
+  // Send current session state to newly connected panel
+  try {
+    port.postMessage({ type: 'SESSION_RESTORE', payload: sessionState });
+  } catch (e) {}
+});
+
 function forwardToPanel(message) {
-  if (sidePanelPort) {
-    try {
-      sidePanelPort.postMessage(message);
-    } catch (e) {
-      console.warn('TypeBridge: Failed to forward to side panel port', e);
-      // Fallback to broadcast
-      chrome.runtime.sendMessage(message).catch(() => {});
-    }
-  } else {
-    // Fallback broadcast
-    chrome.runtime.sendMessage(message).catch(() => {});
+  if (!sidePanelPort) return;
+  try {
+    sidePanelPort.postMessage(message);
+  } catch (e) {
+    console.warn('TypeBridge: Failed to forward to side panel port', e);
   }
 }
 
-// User's requested ensureContentScript
 async function ensureContentScript(tabId) {
   try {
     // ping first — if content script already injected it will respond
     await chrome.tabs.sendMessage(tabId, { type: 'PING' });
-    console.log('TypeBridge: Content script already present in tab:', tabId);
   } catch {
-    // not injected yet — inject now
+    // not injected yet (e.g. tab was open before the extension loaded) — inject now
     console.log('TypeBridge: Injecting content script into tab:', tabId);
     await chrome.scripting.executeScript({
       target: { tabId, allFrames: true },
@@ -59,93 +84,231 @@ async function ensureContentScript(tabId) {
   }
 }
 
-// Open side panel on icon click
-chrome.action.onClicked.addListener(async (tab) => {
-  try {
-    await chrome.sidePanel.open({ tabId: tab.id });
-  } catch (e) {
-    console.error('TypeBridge: Failed to open side panel:', e);
+async function getActiveTab() {
+  // Prefer the tab where the user last focused a field, if it's still the visible tab in its window
+  if (focusTarget) {
+    try {
+      const tab = await chrome.tabs.get(focusTarget.tabId);
+      if (tab?.active) return tab;
+    } catch (e) {
+      focusTarget = null; // tab was closed
+    }
   }
-});
+  const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+  return tab;
+}
+
+// Runs in the builder page's MAIN world (serialized by chrome.scripting, so it must be self-contained).
+// Writes the copy through the builder's own data model so it is saved when the user publishes.
+function applyThroughBuilderApi(adapter, text) {
+  const escapeHtml = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const blocks = text.split(/\n\s*\n/).map(b => escapeHtml(b.trim()).replace(/\n/g, '<br>')).filter(Boolean);
+
+  try {
+    if (adapter.type === 'elementor') {
+      const editor = window.elementor;
+      const commands = window.$e;
+      if (!editor?.getContainer || !commands?.run) return { ok: false, reason: 'Elementor editor API not found.' };
+
+      let container = editor.getContainer(adapter.elementId);
+      if (!container) return { ok: false, reason: 'Elementor element not found.' };
+
+      const defaultKeys = { 'text-editor': 'editor', heading: 'title', button: 'text' };
+      let key = adapter.settingKey || defaultKeys[container.model?.get('widgetType')];
+      if (!key) return { ok: false, reason: 'This Elementor widget has no editable text field.' };
+
+      // Repeater fields look like "tabs.0.tab_title" (same resolution Elementor's inline editing uses)
+      const parts = key.split('.');
+      if (parts.length === 3) {
+        container = container.repeaters?.[parts[0]]?.children?.[parts[1]];
+        key = parts[2];
+        if (!container) return { ok: false, reason: 'Elementor repeater item not found.' };
+      }
+
+      const controlType = (container.controls || container.settings?.controls || {})[key]?.type;
+      const value = controlType === 'wysiwyg'
+        ? blocks.map(b => `<p>${b}</p>`).join('')
+        : controlType === 'text'
+          ? text.replace(/\s*\n+\s*/g, ' ').trim()
+          : text;
+
+      commands.run('document/elements/settings', {
+        container,
+        settings: { [key]: value },
+        options: { external: true }
+      });
+
+      // While inline editing is active Elementor pauses rendering; the DOM must be written too
+      const view = container.view;
+      return { ok: true, domWriteNeeded: view?.allowRender === false };
+    }
+
+    if (adapter.type === 'gutenberg') {
+      const data = window.wp?.data;
+      if (!data) return { ok: false, reason: 'WordPress block editor API not found.' };
+      const block = data.select('core/block-editor').getBlock(adapter.clientId);
+      if (!block) return { ok: false, reason: 'Block not found.' };
+
+      const attributeFor = {
+        'core/paragraph': 'content',
+        'core/heading': 'content',
+        'core/button': 'text',
+        'core/preformatted': 'content',
+        'core/verse': 'content',
+        'core/list-item': 'content'
+      };
+      const attribute = attributeFor[block.name];
+      if (!attribute) return { ok: false, reason: `Unsupported block type: ${block.name}` };
+
+      data.dispatch('core/block-editor').updateBlockAttributes(adapter.clientId, { [attribute]: blocks.join('<br><br>') });
+      return { ok: true };
+    }
+  } catch (e) {
+    return { ok: false, reason: e?.message || String(e) };
+  }
+  return { ok: false, reason: 'Unknown builder.' };
+}
+
+async function runBuilderAdapter(tabId, adapter, text) {
+  // The builder's editor globals (elementor/$e, wp.data) live in the top frame
+  const [injection] = await chrome.scripting.executeScript({
+    target: { tabId, frameIds: [0] },
+    world: 'MAIN',
+    func: applyThroughBuilderApi,
+    args: [adapter, text]
+  });
+  return injection?.result || { ok: false, reason: 'Builder adapter did not run.' };
+}
+
+async function sendToFocusedFrame(tabId, message) {
+  // Only the frame that owns the focused field should apply the copy.
+  const frameId = focusTarget && focusTarget.tabId === tabId ? focusTarget.frameId : 0;
+  try {
+    return await chrome.tabs.sendMessage(tabId, message, { frameId });
+  } catch (e) {
+    // The focused frame may have navigated away; fall back to the top frame
+    if (frameId === 0) throw e;
+    return await chrome.tabs.sendMessage(tabId, message, { frameId: 0 });
+  }
+}
+
+async function applyCopy(payload) {
+  await loadState();
+  const tab = await getActiveTab();
+  if (!tab) throw new Error('No active tab found.');
+
+  await ensureContentScript(tab.id);
+
+  let result = await sendToFocusedFrame(tab.id, { type: 'APPLY_COPY', payload });
+
+  if (result?.needsAdapter) {
+    const adapter = result.needsAdapter;
+    const { originalText, selector } = result;
+    let adapterResult;
+    try {
+      adapterResult = await runBuilderAdapter(tab.id, adapter, payload.newText);
+    } catch (e) {
+      adapterResult = { ok: false, reason: e.message };
+    }
+    console.log('TypeBridge: builder adapter', adapter.type, adapterResult);
+
+    if (adapterResult.ok && !adapterResult.domWriteNeeded) {
+      const verified = await sendToFocusedFrame(tab.id, {
+        type: 'VERIFY_APPLY',
+        payload: { adapter, selector, newText: payload.newText }
+      });
+      if (verified?.ok) return { ok: true, originalText, selector };
+    }
+
+    // Write the DOM directly (needed mid inline-edit, or when the API route failed)
+    result = await sendToFocusedFrame(tab.id, { type: 'APPLY_COPY', payload: { ...payload, forceGeneric: true } });
+  }
+
+  if (!result || !result.ok) {
+    throw new Error(result?.reason || 'Click into a text field in your builder, then try again.');
+  }
+  return result;
+}
 
 // Main Message Listener
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  console.log('TypeBridge Background: Received', message.type, 'from', sender.tab ? 'tab' : 'panel');
-
   if (message.type === 'START_SESSION') {
+    const sections = message.payload.sections;
     sessionState = {
-      sections: message.payload.sections,
+      ...emptySession(),
+      sections,
       sessionStartedAt: Date.now(),
-      appliedCount: 0,
-      skippedCount: 0,
-      totalCount: message.payload.sections.length
+      ...countStatuses(sections)
     };
-    chrome.storage.session.set({ sessionState });
+    saveSession();
     return false;
   }
 
-  if (message.type === 'APPLY_COPY') {
-    (async () => {
-      try {
-        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-        if (tab) {
-          await ensureContentScript(tab.id);
-          
-          // Use user's requested logic: forward to content script
-          chrome.tabs.sendMessage(tab.id, message);
-          
-          // Also broadcast to all frames as a fallback for complex iframes
-          chrome.scripting.executeScript({
-            target: { tabId: tab.id, allFrames: true },
-            func: (payload) => {
-              window.dispatchEvent(new CustomEvent('TYPEBRIDGE_APPLY_BROADCAST', { detail: payload }));
-            },
-            args: [message.payload]
-          });
-        }
-      } catch (e) {
-        console.error('TypeBridge: Apply failed', e);
-        forwardToPanel({ type: 'APPLY_ERROR', payload: { reason: e.message } });
-      }
-    })();
-    return true;
-  }
-
-  if (message.type === 'EXIT_SELECT_MODE') {
-    chrome.tabs.query({ active: true, currentWindow: true }).then(([tab]) => {
-      if (tab) chrome.tabs.sendMessage(tab.id, message).catch(() => {});
+  if (message.type === 'SESSION_UPDATE') {
+    loadState().then(() => {
+      const sections = message.payload.sections;
+      sessionState = { ...sessionState, sections, ...countStatuses(sections) };
+      saveSession();
     });
-    return false;
-  }
-
-  if (message.type === 'FOCUS_DETECTED') {
-    forwardToPanel(message);
-    return false;
-  }
-
-  if (message.type === 'APPLY_SUCCESS') {
-    // User requested logic: Update session state in storage
-    sessionState.appliedCount++;
-    chrome.storage.session.set({ sessionState });
-    forwardToPanel(message);
-    return false;
-  }
-
-  if (message.type === 'APPLY_ERROR') {
-    forwardToPanel(message);
     return false;
   }
 
   if (message.type === 'RESET_SESSION') {
-    sessionState = { sections: [], appliedCount: 0, skippedCount: 0, totalCount: 0 };
-    chrome.storage.session.remove('sessionState');
+    sessionState = emptySession();
+    chrome.storage.session.remove('sessionState').catch(() => {});
+    return false;
+  }
+
+  if (message.type === 'APPLY_COPY') {
+    applyCopy(message.payload)
+      .then((result) => {
+        forwardToPanel({
+          type: 'APPLY_SUCCESS',
+          payload: {
+            sectionId: message.payload.sectionId,
+            part: message.payload.part,
+            appliedAt: Date.now(),
+            originalText: result.originalText ?? null,
+            targetSelector: result.selector ?? null
+          }
+        });
+      })
+      .catch((e) => {
+        console.error('TypeBridge: Apply failed', e);
+        forwardToPanel({
+          type: 'APPLY_ERROR',
+          payload: { sectionId: message.payload.sectionId, reason: friendlyError(e) }
+        });
+      });
+    return false;
+  }
+
+  if (message.type === 'FOCUS_DETECTED') {
+    if (sender.tab) {
+      focusTarget = { tabId: sender.tab.id, frameId: sender.frameId ?? 0 };
+      chrome.storage.session.set({ focusTarget }).catch(() => {});
+    }
+    forwardToPanel(message);
     return false;
   }
 
   if (message.type === 'FORCE_INJECT') {
-    chrome.tabs.query({ active: true, currentWindow: true }).then(([tab]) => {
-      if (tab) ensureContentScript(tab.id);
-    });
+    loadState().then(getActiveTab)
+      .then((tab) => tab && ensureContentScript(tab.id))
+      .catch((e) => forwardToPanel({ type: 'APPLY_ERROR', payload: { reason: friendlyError(e) } }));
     return false;
   }
+
+  return false;
 });
+
+function friendlyError(e) {
+  const msg = e?.message || String(e);
+  if (/cannot be scripted|chrome:\/\/|Cannot access|extensions gallery/i.test(msg)) {
+    return 'TypeBridge cannot run on this page.';
+  }
+  if (/Receiving end does not exist|Could not establish connection/i.test(msg)) {
+    return 'Lost connection to the page. Reload the builder tab and try again.';
+  }
+  return msg;
+}

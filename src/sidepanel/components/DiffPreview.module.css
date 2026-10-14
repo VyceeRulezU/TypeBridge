@@ -39,5 +39,7 @@
   font-family: monospace;
   font-size: 12px;
   color: var(--color-text-900);
-  word-break: break-word;
+  min-width: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }

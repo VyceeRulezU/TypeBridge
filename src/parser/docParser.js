@@ -26,7 +26,7 @@ export function parseDocument(rawText) {
   const sections = [];
   let currentSection = null;
 
-  const createSection = (level, heading) => ({
+  const createSection = (level, heading, isPreamble = false) => ({
     id: typeof crypto !== 'undefined' && crypto.randomUUID 
       ? crypto.randomUUID() 
       : `sec-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
@@ -37,9 +37,12 @@ export function parseDocument(rawText) {
     appliedAt: null,
     originalText: null,
     targetSelector: null,
+    isPreamble,
   });
 
-  let hasSeenAnyHeading = false;
+  // When the document marks headings explicitly (Markdown, or imported from Docs/DOCX),
+  // don't also guess headings from short lines — that turns table cells and labels into sections.
+  const hasExplicitHeadings = lines.some(line => /^#{1,3}\s+\S/.test(line));
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
@@ -72,7 +75,7 @@ export function parseDocument(rawText) {
       headingText = line;
     } 
     // Short line followed by empty line
-    else if (line.length > 0 && line.length < 70 && !line.endsWith('.') && i + 1 < lines.length && lines[i+1] === '') {
+    else if (!hasExplicitHeadings && line.length > 0 && line.length < 70 && !line.endsWith('.') && i + 1 < lines.length && lines[i+1] === '') {
       isHeading = true;
       level = 'h2';
       headingText = line;
@@ -85,14 +88,13 @@ export function parseDocument(rawText) {
     }
 
     if (isHeading) {
-      hasSeenAnyHeading = true;
       if (currentSection) {
         sections.push(currentSection);
       }
       currentSection = createSection(level, headingText);
     } else {
       if (!currentSection) {
-        currentSection = createSection('body', 'Document Start');
+        currentSection = createSection('body', 'Document', true);
       }
       currentSection.body.push(line);
     }
@@ -112,14 +114,13 @@ export function parseDocument(rawText) {
     
     sec.body = bodyLines.join('\n');
 
-    if (!hasSeenAnyHeading && sec.heading === 'Document Start') {
-      if (sec.body.trim()) result.push(sec);
-    } else if (sec.heading === 'Document Start' && bodyLines.length === 0) {
-      // Skip empty initial document block if other headings exist
-    } else {
-      if (sec.heading.trim() || sec.body.trim()) {
-        result.push(sec);
-      }
+    const { isPreamble, ...section } = sec;
+
+    if (isPreamble) {
+      // Text before the first heading becomes a 'Document' block; skip it if empty
+      if (section.body.trim()) result.push(section);
+    } else if (section.heading.trim() || section.body.trim()) {
+      result.push(section);
     }
   }
 

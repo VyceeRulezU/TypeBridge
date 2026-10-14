@@ -2,6 +2,8 @@
   display: flex;
   flex-direction: column;
   height: 100vh;
+  width: 100%;
+  overflow: hidden;
   background-color: var(--color-surface);
   font-family: var(--font-family);
   color: var(--color-text-900);
@@ -21,11 +23,14 @@
   font-size: var(--font-size-lg);
   display: flex;
   align-items: center;
+  min-width: 0;
 }
 
 .logoImg {
   height: 3rem;
   width: auto;
+  max-width: 100%;
+  object-fit: contain;
   display: block;
 }
 
@@ -57,7 +62,9 @@
 
 .body {
   flex: 1;
+  min-width: 0;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: var(--space-4);
   display: flex;
   flex-direction: column;
